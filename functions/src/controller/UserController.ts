@@ -7,14 +7,14 @@ import * as validator from 'express-validator';
 
 export class UserController {
     public router = express.Router();
-    path = 'users/'
+    path = '/users'
     constructor() {
         this.init();
     }
 
     init() {
         this.router.post(this.path + ('/signUp'), this.addUser);
-        this.router.get(this.path + 'test', (req, res) => {
+        this.router.get(this.path + '/test', (req, res) => {
             res.send('ok');
         })
     }
