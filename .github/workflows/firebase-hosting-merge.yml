@@ -2,7 +2,7 @@
 # https://github.com/firebase/firebase-tools
 
 name: Deploy to Firebase Hosting on merge
-'on':
+"on":
   push:
     branches:
       - main
@@ -11,22 +11,22 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./functions
+        working-directory: "/functions"
     steps:
       - uses: actions/checkout@v2
       - run: npm ci && npm run build
-       env:
+        env:
           CI: true
-          private_key: ${{ secrets.PRIVATE_KEY }},
-          project_id: ${{ secrets.PROJECT_ID }},
-          clientEmail: ${{ secrets.CLIENT_EMAIL }},
-          databaseuRL: ${{ secrets.DATABASEURL }},
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }},
+          private_key: ${{ secrets.PRIVATE_KEY }}
+          project_id: ${{ secrets.PROJECT_ID }}
+          clientEmail: ${{ secrets.CLIENT_EMAIL }}
+          databaseuRL: ${{ secrets.DATABASEURL }}
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_QUICKSTART_1594476482074 }}'
+          repoToken: "${{ secrets.GITHUB_TOKEN }}"
+          firebaseServiceAccount: "${{ secrets.FIREBASE_SERVICE_ACCOUNT_QUICKSTART_1594476482074 }}"
           channelId: live
           projectId: quickstart-1594476482074
-         env:
+        env:
           FIREBASE_CLI_PREVIEWS: hostingchannels

@@ -28,13 +28,16 @@ export class UserController {
                 email: data.email,
                 password: password,
                 displayName: data.name
+            }).then(result => {
+                userSchema.create({
+                    email: result.email!,
+                    password: result.passwordHash!,
+                    name: result.displayName!,
+                });
+                console.log(result.passwordHash);
             });
 
-            userSchema.create({
-                email: data.email,
-                password: password,
-                name: data.name
-            });
+
 
         } catch (error) {
             console.error(error);

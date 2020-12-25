@@ -7,9 +7,9 @@ const adminstrator = admin.initializeApp({
     credential: admin.credential.cert({
         privateKey: functions.config().service.private_key,
         projectId: functions.config().service.project_id,
-        clientEmail: functions.config().service.client_email
+        clientEmail: functions.config().service.client_email,
     }),
-    databaseURL: functions.config().service.databaseuRL
+    databaseURL: functions.config().service.databaseuRL,
 });
 
 // const client = firebase.default.initializeApp({
