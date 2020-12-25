@@ -7,10 +7,9 @@ import { Route } from './router/route'
 const app = express();
 
 app.use(bodyParser.json());
-app.set('json spaces', 5)
-
-exports.app = functions.https.onRequest(app);
+app.set('json spaces', 5);
 
 const routes = new Route(app);
 routes.routers();
 
+exports.app = functions.https.onRequest(app);

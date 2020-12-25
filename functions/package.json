@@ -7,13 +7,12 @@
     "shell": "npm run build && firebase functions:shell",
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
-    "logs": "firebase functions:log",
-    "debug": "concurrently \"tsc\" \"nodemon --inspect ./lib/index.js\""
+    "logs": "firebase functions:log"
   },
   "engines": {
     "node": "14"
   },
-  "main": "lib/src/index.js",
+  "main": "lib/index.js",
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "express": "^4.17.1",

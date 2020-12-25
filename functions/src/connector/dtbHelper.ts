@@ -4,7 +4,7 @@ import * as firebase from 'firebase'
 
 const adminstrator = admin.initializeApp({
     credential: admin.credential.cert({
-        privateKey: functions.config().service.private_key,
+        privateKey: functions.config().service.private_key.replace(/\\n/g, '\n'),
         projectId: process.env.GCLOUD_PROJECT,
         clientEmail: functions.config().service.client_email,
     }),
