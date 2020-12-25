@@ -9,11 +9,6 @@ const app = express();
 app.use(bodyParser.json());
 app.set('json spaces', 5)
 
-app.listen(5000, () => {
-    console.log(`Example app listening at http://localhost:5000`)
-});
-
-
 exports.app = functions.https.onRequest(app);
 
 const routes = new Route(app);
