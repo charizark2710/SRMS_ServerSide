@@ -8,7 +8,6 @@ export class Route {
     userController = new UserController();
     constructor(app: express.Application) {
         this.app = app;
-        console.log(URL)
     }
 
     routers() {

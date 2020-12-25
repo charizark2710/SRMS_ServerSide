@@ -13,7 +13,6 @@ export class UserController {
     }
 
     init() {
-        console.log(this.path + "/test");
         this.router.post(this.path + ('/signUp'), this.addUser);
         this.router.get(this.path + "/test", (req, res) => {
             res.send('ok');
