@@ -15,6 +15,12 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: npm ci && npm run build
+       env:
+          CI: true
+          private_key: ${{ secrets.PRIVATE_KEY }}
+          project_id: ${{ secrets.PROJECT_ID }}
+          clientEmail: ${{ secrets.CLIENT_EMAIL }}
+          databaseuRL: ${{ secrets.DATABASEURL }}
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
@@ -22,9 +28,4 @@ jobs:
           channelId: live
           projectId: quickstart-1594476482074
          env:
-          CI: true
           FIREBASE_CLI_PREVIEWS: hostingchannels
-          private_key: ${{ secrets.PRIVATE_KEY }}
-          project_id: ${{ secrets.PROJECT_ID }}
-          clientEmail: ${{ secrets.CLIENT_EMAIL }}
-          databaseuRL: ${{ secrets.DATABASEURL }}
