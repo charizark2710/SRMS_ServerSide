@@ -8,18 +8,21 @@ const adminstrator = admin.initializeApp({
         projectId: process.env.GCLOUD_PROJECT,
         clientEmail: functions.config().service.client_email,
     }),
-    databaseURL: functions.config().service.databaseuRL,
+    databaseURL: functions.config().service.database_urL,
 });
 
-// const client = firebase.default.initializeApp({
-//     credential: admin.credential.cert({
-//         privateKey: config.private_key,
-//         projectId: config.project_id,
-//         clientEmail: config.client_email
-//     }),
-//     databaseURL: config.databaseUrl
-// });
+const firebaseConfig = {
+    apiKey: functions.config().client.api_key,
+    authDomain: functions.config().client.auth_domain,
+    databaseURL: functions.config().client.database_urL,
+    projectId: functions.config().client.project_id,
+    storageBucket: functions.config().client.storage_bucket,
+    messagingSenderId: functions.config().client.messaging_sender_id,
+    appId: functions.config().client.app_id
+};
+
+const client = firebase.default.initializeApp(firebaseConfig);
 
 const db = admin.firestore();
 console.log("connected");
-export { adminstrator, db }
+export { adminstrator, db, client }

@@ -24,7 +24,7 @@ const userConverter: firestore.FirestoreDataConverter<User> = {
     }
 };
 
-const userSchema = db.collection('users').doc().withConverter(userConverter);
+const userSchema = db.collection('users').withConverter(userConverter);
 export { userSchema }
 
 

@@ -66,3 +66,4 @@ node_modules/
 .env
 
 /functions/res/config.json
+/functions/.runtimeconfig.json
