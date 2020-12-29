@@ -5,10 +5,14 @@ class User {
     name: string;
     password: string;
     email: string;
-    constructor(name: string, password: string, email: string) {
+    deleted: boolean;
+    deletedAt: Date | undefined;
+    constructor(name: string, password: string, email: string, deleted: boolean = false, deletedAt: Date | undefined) {
         this.email = email;
         this.name = name;
         this.password = password;
+        this.deleted = deleted;
+        this.deletedAt = deletedAt;
     }
 }
 
@@ -20,7 +24,7 @@ const userConverter: firestore.FirestoreDataConverter<User> = {
         snapshot: firestore.QueryDocumentSnapshot): User {
         const data = snapshot.data()!;
         snapshot.data
-        return new User(data.name, data.password, data.email);
+        return new User(data.name, data.password, data.email, data.deleted, data.deletedAt);
     }
 };
 

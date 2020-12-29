@@ -8,6 +8,7 @@ const app = express();
 
 app.use(bodyParser.json());
 app.set('json spaces', 5);
+app.set('view engine', 'html');
 
 const routes = new Route(app);
 routes.routers();
