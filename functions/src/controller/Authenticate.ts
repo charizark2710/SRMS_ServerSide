@@ -16,7 +16,7 @@ export default async function auth(req: express.Request, res: express.Response, 
                 return res.status(401).send({ message: 'Unauthorized' });
             const token = split[1];
             try {
-                const decodedToken = jwt.verify(token, 'weeb', (err, decoded: any) => {
+                jwt.verify(token, 'weeb', (err, decoded: any) => {
                     console.log("decodedToken: ", JSON.stringify(decoded))
                     res.locals = { ...res.locals, uid: decoded?.uid, role: decoded?.role, email: decoded?.email };
                 });

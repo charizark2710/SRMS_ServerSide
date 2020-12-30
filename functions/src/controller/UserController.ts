@@ -47,45 +47,39 @@ export class UserController {
 
             const data = request.body;
             const email: string = data.email;
+            console.log(data);
             const eType = email.split('@')[1];
             if (eType === 'fpt.edu.vn' || eType === 'fe.edu.vn') {
-                const salt = await bycrypt.genSalt(10);
-                const password = await bycrypt.hash(data.password, salt);
-                const name = email.split('@')[0];
                 const isEmailExist = await userSchema.where('email', "==", email).get();
 
                 if (isEmailExist.empty) {
-                    admin.app().auth().createUser({
-                        email: email,
-                        password: password,
-                        displayName: name
-                    }).then(async userRecord => {
+                    admin.app().auth().getUser(request.body.uid).then(async userRecord => {
                         userSchema.doc(userRecord.uid).set({
                             email: userRecord.email!,
-                            password: password,
                             name: userRecord.displayName!,
                             deleted: false,
                             deletedAt: undefined
                         });
-                        if (eType !== 'fpt.edu.vn')
+                        if (eType === 'fpt.edu.vn')
                             await admin.auth().setCustomUserClaims(userRecord.uid, { role: 'client' });
                         else
                             await admin.auth().setCustomUserClaims(userRecord.uid, { role: 'admin' });
-                        response.send(userRecord);
+                        response.json(userRecord);
                     });
                 }
                 else {
-                    response.send("This email have been used");
+                    return response.status(400).json({ error: "Email da duoc su dung" });
                 }
 
             } else {
-                response.send('email khong co quyen truy cap vao he thong');
+                admin.app().auth().deleteUser(request.body.uid);
+                return response.status(400).json({ error: 'email khong co quyen truy cap vao he thong' });
                 // response.redirect("Trang trủ")
             }
         }
         catch (error) {
             console.error(error);
-            response.status(500).send("Something went wrong");
+            return response.status(500).send("Something went wrong");
         }
     }
 
@@ -136,7 +130,6 @@ export class UserController {
                     uid: uid,
                     email: data.email,
                     displayName: data.name,
-                    password: data.password,
                 });
                 await admin.auth().setCustomUserClaims(userRecord.uid, { role: 'client' });
                 return response.send(userRecord);
