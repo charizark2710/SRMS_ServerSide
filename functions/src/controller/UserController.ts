@@ -46,32 +46,41 @@ export class UserController {
             }
 
             const data = request.body;
-            const salt = await bycrypt.genSalt(10);
-            const password = await bycrypt.hash(data.password, salt);
             const email: string = data.email;
-            const name = email.split('@')[0];
-            const isEmailExist = await userSchema.where('email', "==", email).get();
+            const eType = email.split('@')[1];
+            if (eType === 'fpt.edu.vn' || eType === 'fe.edu.vn') {
+                const salt = await bycrypt.genSalt(10);
+                const password = await bycrypt.hash(data.password, salt);
+                const name = email.split('@')[0];
+                const isEmailExist = await userSchema.where('email', "==", email).get();
 
-            if (isEmailExist.empty) {
-                admin.app().auth().createUser({
-                    email: email,
-                    password: password,
-                    displayName: name
-                }).then(async userRecord => {
-                    userSchema.doc(userRecord.uid).set({
-                        email: userRecord.email!,
+                if (isEmailExist.empty) {
+                    admin.app().auth().createUser({
+                        email: email,
                         password: password,
-                        name: userRecord.displayName!,
-                        deleted: false,
-                        deletedAt: undefined
+                        displayName: name
+                    }).then(async userRecord => {
+                        userSchema.doc(userRecord.uid).set({
+                            email: userRecord.email!,
+                            password: password,
+                            name: userRecord.displayName!,
+                            deleted: false,
+                            deletedAt: undefined
+                        });
+                        if (eType !== 'fpt.edu.vn')
+                            await admin.auth().setCustomUserClaims(userRecord.uid, { role: 'client' });
+                        else
+                            await admin.auth().setCustomUserClaims(userRecord.uid, { role: 'admin' });
+                        response.send(userRecord);
                     });
-                    await admin.auth().setCustomUserClaims(userRecord.uid, { role: 'client' });
-                    response.send(userRecord);
-                });
-            }
-            else {
-                response.send("This email have been used");
-                // response.redirect("Trang trủ");
+                }
+                else {
+                    response.send("This email have been used");
+                }
+
+            } else {
+                response.send('email khong co quyen truy cap vao he thong');
+                // response.redirect("Trang trủ")
             }
         }
         catch (error) {
