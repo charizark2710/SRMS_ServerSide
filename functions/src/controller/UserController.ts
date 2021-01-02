@@ -60,9 +60,14 @@ export class UserController {
                             deleted: false,
                             deletedAt: undefined
                         });
-                        if (eType === 'fpt.edu.vn')
-                            await admin.auth().setCustomUserClaims(userRecord.uid, { role: 'client' });
-                        else
+                        if (eType === 'fpt.edu.vn') {
+                            const idNum = userRecord.email?.match('/[a-zA-Z]+|[0-9]+(?:\.[0-9]+)?|\.[0-9]+/g')?.toString();
+                            console.log(idNum);
+                            if (idNum?.length! >= 4) {
+                                await admin.auth().setCustomUserClaims(userRecord.uid, { role: 'student' });
+                            } else
+                                await admin.auth().setCustomUserClaims(userRecord.uid, { role: 'lecture' });
+                        } else
                             await admin.auth().setCustomUserClaims(userRecord.uid, { role: 'admin' });
                         response.json(userRecord);
                     });
