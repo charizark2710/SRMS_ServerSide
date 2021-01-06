@@ -1,8 +1,6 @@
 import * as express from 'express';
 import { userSchema } from "../model/UserModel";
-import bycrypt from 'bcryptjs'
-import * as validator from 'express-validator';
-import admin = require("firebase-admin");
+import { adminAuth } from "../connector/configFireBase"
 import cookie from "cookie"
 import jwt from "jsonwebtoken";
 import { UserController } from './UserController'
@@ -21,31 +19,29 @@ export class Login {
     login = async (request: express.Request, response: express.Response) => {
         try {
             const data = request.body;
-            const decodedToken = await admin.auth().verifyIdToken(data.idToken);
+            const decodedToken = await adminAuth.verifyIdToken(data.idToken);
             const email = decodedToken.email;
-            const query = await userSchema.where('deleted', '==', false).where('email', '==', email).get();
-            if (!query.empty) {
-                // const checkPassword = await bycrypt.compare(data.password, query.docs[0].data().password);
-                // if (checkPassword) {
-                const user = await admin.auth().getUser(decodedToken.uid);
-                const token = 'Bearer ' + jwt.sign({ uid: user.uid, role: user.customClaims?.role, email: user.email }, 'weeb');
-                console.log(token);
+            // const query = await userSchema.where('deleted', '==', false).where('email', '==', email).get();
+            const user = await adminAuth.getUser(decodedToken.uid);
+            console.log(user.customClaims?.role + '/' + data.employeeId + '/email');
+            const query = (await userSchema.child(user.customClaims?.role + '/' + data.employeeId + "/email").get()).val();
+
+            if (query && query.toString() === email) {
+                const token = 'Bearer ' + jwt.sign({ uid: user.uid, employeeId: data.employeeId, role: user.customClaims?.role, email: user.email }, 'weeb');
                 response.setHeader('Set-Cookie', cookie.serialize('token', token, {
-                    maxAge: 60 * 60,
-                    httpOnly: true
+                    httpOnly: true,
+                    maxAge: 60 * 60
                 }));
                 response.json({ message: 'ok' });
-                // } else {
-                //     response.send('Sai mat khau');
-                // }
             } else {
-                request.body = { email: email, uid: data.uid, name: data.name };
-                const controller = new UserController()
+                request.body = { email: email, uid: data.uid, name: data.name, employeeId: data.employeeId };
+                const controller = new UserController();
+
                 controller.addUser(request, response);
             }
         } catch (e) {
             console.log(e);
-            response.status(500).send(e);
+            response.status(500).json({ error: e });
         }
     }
 }

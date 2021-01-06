@@ -18,7 +18,7 @@ export default async function auth(req: express.Request, res: express.Response, 
             try {
                 jwt.verify(token, 'weeb', (err, decoded: any) => {
                     console.log("decodedToken: ", JSON.stringify(decoded))
-                    res.locals = { ...res.locals, uid: decoded?.uid, role: decoded?.role, email: decoded?.email };
+                    res.locals = { ...res.locals, uid: decoded?.uid, role: decoded?.role, email: decoded?.email, employeeId: decoded?.employeeId };
                 });
                 next();
             } catch (e) {
@@ -27,7 +27,7 @@ export default async function auth(req: express.Request, res: express.Response, 
             }
         }
     } catch (error) {
-        res.status(500).send(error);
+        return res.status(500).send(error);
     }
 
 }

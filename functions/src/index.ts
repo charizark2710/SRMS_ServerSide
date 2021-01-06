@@ -1,10 +1,11 @@
 import * as functions from 'firebase-functions';
 import express = require('express');
 import bodyParser = require("body-parser");
-import * as connector from './connector/dtbHelper'
+import cookieParser = require("cookie-parser")
 import { Route } from './router/route'
 
 const app = express();
+app.use(cookieParser());
 
 app.use(bodyParser.json());
 app.set('view engine', 'html');
@@ -22,7 +23,7 @@ app.use((req, res, next) => {
 
     // Set to true if you need the website to include cookies in the requests sent
     // to the API (e.g. in case you use sessions)
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Credentials', "true");
 
     // Pass to next layer of middleware
     next();

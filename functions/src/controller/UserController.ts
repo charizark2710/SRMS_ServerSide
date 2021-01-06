@@ -1,10 +1,12 @@
 import { userSchema } from '../model/UserModel'
 import * as express from 'express';
-import admin = require("firebase-admin");
+import { adminAuth } from "../connector/configFireBase"
 import bycrypt from 'bcryptjs'
 import * as validator from 'express-validator';
 import auth from './Authenticate';
-import authorized from './Authorized'
+import authorized from './Authorized';
+import cookie from "cookie";
+import jwt from "jsonwebtoken";
 
 export class UserController {
     public router = express.Router();
@@ -15,10 +17,10 @@ export class UserController {
 
     init() {
         this.router.post(this.path + '/signUp', this.validate(), this.addUser);
-        this.router.patch(this.path + "/edit/:id", this.editUser);
-        this.router.delete(this.path + "/delete/:id", this.deleteUser);
-        this.router.patch(this.path + "/deleted/:id/restore", this.restoreUser);
-        this.router.get(this.path + '/:id', auth, authorized({ hasRole: ['client'] }), this.getUser);
+        this.router.patch(this.path + "/edit/:id", auth, authorized({ hasRole: ['admin'] }), this.editUser);
+        this.router.delete(this.path + "/delete/:id", auth, authorized({ hasRole: ['admin'] }), this.deleteUser);
+        this.router.patch(this.path + "/deleted/:id/restore", auth, authorized({ hasRole: ['admin', 'student', 'lecture'] }), this.restoreUser);
+        this.router.get(this.path + '/:id', auth, authorized({ hasRole: ['admin', 'student', 'lecture'] }), this.getUser);
     }
 
     validate = () => {
@@ -50,42 +52,68 @@ export class UserController {
             console.log(data);
             const eType = email.split('@')[1];
             if (eType === 'fpt.edu.vn' || eType === 'fe.edu.vn') {
-                const isEmailExist = await userSchema.where('email', "==", email).get();
+                const isEmailExist = await userSchema.child("email").equalTo(email).get();
+                // const isEmailExist = await userSchema.where('email', "==", email).get();
 
-                if (isEmailExist.empty) {
-                    admin.app().auth().getUser(request.body.uid).then(async userRecord => {
-                        userSchema.doc(userRecord.uid).set({
-                            email: userRecord.email!,
-                            name: userRecord.displayName!,
+                if (!isEmailExist.exists()) {
+                    // userSchema.doc(userRecord.uid).set({
+                    //     email: userRecord.email!,
+                    //     name: userRecord.displayName!,
+                    //     deleted: false,
+                    //     deletedAt: undefined
+                    // });
+                    let result;
+                    if (eType === 'fpt.edu.vn') {
+                        const idNum = data.email?.match('/[a-zA-Z]+|[0-9]+(?:\.[0-9]+)?|\.[0-9]+/g')?.toString();
+                        if (idNum?.length! >= 4) {
+                            await adminAuth.setCustomUserClaims(data.uid, { role: 'student' });
+                            result = userSchema.child("student/" + data.employeeId).set({
+                                email: data.email!,
+                                name: data.name!,
+                                deleted: false,
+                                deletedAt: null
+                            });
+                        } else {
+                            await adminAuth.setCustomUserClaims(data.uid, { role: 'lecture' });
+                            result = userSchema.child("lecture/" + data.employeeId).set({
+                                email: data.email!,
+                                name: data.name!,
+                                deleted: false,
+                                deletedAt: null
+                            });
+                        }
+                    } else {
+                        await adminAuth.setCustomUserClaims(data.uid, { role: 'admin' });
+                        result = userSchema.child("admin/" + data.employeeId).set({
+                            email: data.email!,
+                            name: data.name!,
                             deleted: false,
-                            deletedAt: undefined
+                            deletedAt: null
                         });
-                        if (eType === 'fpt.edu.vn') {
-                            const idNum = userRecord.email?.match('/[a-zA-Z]+|[0-9]+(?:\.[0-9]+)?|\.[0-9]+/g')?.toString();
-                            console.log(idNum);
-                            if (idNum?.length! >= 4) {
-                                await admin.auth().setCustomUserClaims(userRecord.uid, { role: 'student' });
-                            } else
-                                await admin.auth().setCustomUserClaims(userRecord.uid, { role: 'lecture' });
-                        } else
-                            await admin.auth().setCustomUserClaims(userRecord.uid, { role: 'admin' });
-                        response.json(userRecord);
-                    });
+                    }
+                    console.log(result);
+                    const role = (await adminAuth.getUser(data.uid)).customClaims?.role;
+                    const token = 'Bearer ' + jwt.sign({ uid: data.uid, employeeId: data.employeeId, role: role, email: data.email }, 'weeb');
+                    response.setHeader('Set-Cookie', cookie.serialize('token', token, {
+                        httpOnly: true,
+                        maxAge: 60 * 60
+                    }));
+                    return response.json(result);
                 }
                 else {
-                    return response.status(400).json({ error: "Email da duoc su dung" });
+                    response.status(400).json({ error: "Email da duoc su dung" });
                 }
 
             } else {
-                admin.app().auth().deleteUser(request.body.uid);
-                return response.status(400).json({ error: 'email khong co quyen truy cap vao he thong' });
+                response.status(400).json({ error: 'email khong co quyen truy cap vao he thong' });
                 // response.redirect("Trang trủ")
             }
         }
         catch (error) {
             console.error(error);
-            return response.status(500).send("Something went wrong");
+            response.status(500).send("Something went wrong");
         }
+
     }
 
     editUser = async (request: express.Request, response: express.Response) => {
@@ -93,12 +121,13 @@ export class UserController {
             const data = request.body;
             const salt = await bycrypt.genSalt(10);
             const password = await bycrypt.hash(data.password, salt);
-            const user = await admin.auth().updateUser(request.params.id, {
+            const user = await adminAuth.updateUser(request.params.id, {
                 password: password
             });
-            await userSchema.doc(request.params.id).update({
-                password: password,
-            });
+            // await userSchema.doc(request.params.id).update({
+            //     password: password,
+            // });
+            userSchema.once("value")
             return response.send(user);
         } catch (error) {
             response.status(500).send(error);
@@ -108,12 +137,18 @@ export class UserController {
     deleteUser = async (request: express.Request, response: express.Response) => {
         try {
             const uid = request.params.id;
-            const user = await admin.auth().deleteUser(uid);
-            userSchema.doc(uid).update({
-                deleted: true,
-                deletedAt: new Date()
-            }).catch(error => {
-                response.status(500).send(error);
+            const user = await adminAuth.deleteUser(uid);
+            // userSchema.doc(uid).update({
+            //     deleted: true,
+            //     deletedAt: new Date()
+            // }).catch(error => {
+            //     response.status(500).send(error);
+            // });
+            userSchema.orderByChild("uid").equalTo(uid).get().then(snapshot => {
+                snapshot.ref.update({
+                    deleted: true,
+                    deletedAt: new Date()
+                });
             });
             response.send(user);
         } catch (error) {
@@ -124,19 +159,25 @@ export class UserController {
     restoreUser = async (request: express.Request, response: express.Response) => {
         try {
             const uid = request.params.id;
-            const user = await userSchema.doc(uid).get();
-            const data = user.data();
+            const user = await userSchema.child(uid).get();
+            const data = await user.val();
+            // const user = await userSchema.doc(uid).get();
+            // const data = user.data();
             if (user.exists && data?.deleted) {
-                await userSchema.doc(uid).update({
+                // await userSchema.doc(uid).update({
+                //     deleted: false,
+                //     deletedAt: null
+                // });
+                user.ref.update({
                     deleted: false,
                     deletedAt: null
                 });
-                const userRecord = await admin.auth().createUser({
+                const userRecord = await adminAuth.createUser({
                     uid: uid,
                     email: data.email,
                     displayName: data.name,
                 });
-                await admin.auth().setCustomUserClaims(userRecord.uid, { role: 'client' });
+                await adminAuth.setCustomUserClaims(userRecord.uid, { role: 'client' });
                 return response.send(userRecord);
             }
             response.send("Nguoi dung khong ton tai");
@@ -149,11 +190,12 @@ export class UserController {
     getUser = async (request: express.Request, response: express.Response) => {
         try {
             const uid = request.params.id;
-            const user = await userSchema.doc(uid).get();
-            response.send(user.data());
+            // const user = await userSchema.doc(uid).get();
+            const user = await userSchema.child(response.locals.role).child(uid).get();
+            response.json(user.val());
         } catch (error) {
             console.log(error);
-            response.status(500).send(error);
+            response.status(500).json(error);
         }
     }
 }
