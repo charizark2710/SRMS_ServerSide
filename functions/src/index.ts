@@ -3,6 +3,7 @@ import express = require('express');
 import bodyParser = require("body-parser");
 import cookieParser = require("cookie-parser")
 import { Route } from './router/route'
+import { mediaServer } from './media-server/media-server'
 
 const app = express();
 app.use(cookieParser());
@@ -31,5 +32,6 @@ app.use((req, res, next) => {
 
 const routes = new Route(app);
 routes.routers();
-
+const media = new mediaServer(app);
+media.setCanvas();
 exports.app = functions.https.onRequest(app);

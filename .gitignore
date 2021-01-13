@@ -67,4 +67,4 @@ node_modules/
 
 /functions/res/config.json
 /functions/.runtimeconfig.json
-/functions/client
+/ffmpeg
