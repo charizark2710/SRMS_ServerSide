@@ -1,44 +1,41 @@
 import * as express from 'express';
 import child_process from 'child_process';
-import io, { Socket } from 'socket.io';
-import http from 'http';
-import path from 'path';
-
+import { db } from '../connector/configFireBase'
+import * as Canvas from 'canvas'
 
 export class mediaServer {
+    public router = express.Router();
+
     spawn = child_process.spawn;
-    httpServer: http.Server;
-    ioServer: io.Server;
-    constructor(app: express.Application) {
-        this.httpServer = http.createServer(app);
-        this.httpServer.listen(5001, () => console.log("Socket running in port " + 5001))
-        this.ioServer = new io.Server(this.httpServer, {
-            cookie: true,
-            cors: {
-                origin: "http://localhost:3000",
-                credentials: true,
-                methods: ['GET', 'PUT', 'POST'],
-                allowedHeaders: 'X-Requested-With,content-type'
-            },
-        });
+    constructor() {
+        this.init();
     }
 
-    setCanvas() {
-        this.spawn(path.join(__dirname, '../../../ffmpeg/bin/ffmpeg'), ['h']).on('error', e => {
-            console.error("FFMpeg not found in system cli; please install ffmpeg properly or make a softlink to ./!" + '\n' + e);
-            process.exit(-1);
-        });
+    init() {
+        this.router.get('/testMedia', this.test);
+    }
 
-        this.ioServer.on('connection', (socket: Socket) => {
-            console.log(socket.id + ": connected");
-            socket.emit('message', 'Hello from mediarecorder-to-rtmp server!');
-            socket.emit('message', 'Please set rtmp destination before start streaming.');
-            socket.on('frame', (data)=>{
+    test = (request: express.Request, response: express.Response) => {
+        const canvas = Canvas.createCanvas(480, 640);
+        const ctx = canvas.getContext('2d');
+        try {
+            db.ref('video').on("child_added", (snap) => {
+                const image = new Canvas.Image();
+                image.src = snap.val();
+                ctx.drawImage(image, 0, 0);
             });
-        });
+            db.ref('video').on("child_changed", (snap) => {
+                const image = new Canvas.Image();
+                image.src = snap.val();
+                ctx.drawImage(image, 0, 0);
+            });
+            response.send('<img src="' + canvas.toDataURL() + '" />');
+
+        } catch (error) {
+            response.status(500).send(error);
+
+        }
 
 
     }
-
-
 }

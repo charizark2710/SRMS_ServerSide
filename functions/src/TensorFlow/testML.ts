@@ -11,7 +11,7 @@ export class testML {
 
     public router = express.Router();
 
-    dom = JSDOM.fromFile(path.join(__dirname + '/test.html'), { userAgent: "http://localhost:5000/" });
+    // dom = JSDOM.fromFile(path.join(__dirname + '/test.html'), { userAgent: "http://localhost:5000/" });
 
     constructor() {
         this.init();
@@ -33,39 +33,39 @@ export class testML {
 
     init() {
 
-        this.router.get('/testML', this.test);
+        // this.router.get('/testML', this.test);
     }
 
-    loadAndPredict = async () => {
-        const canvas = (await this.dom).window.document.querySelector("#output") as HTMLCanvasElement;
-        const ctx = canvas.getContext("2d");
-        const video: any = (await this.dom).window.document.querySelector("#video") as HTMLVideoElement;
+    // loadAndPredict = async () => {
+    //     const canvas = (await this.dom).window.document.querySelector("#output") as HTMLCanvasElement;
+    //     const ctx = canvas.getContext("2d");
+    //     const video: any = (await this.dom).window.document.querySelector("#video") as HTMLVideoElement;
 
-        video.onplay = function () {
-            ctx!.drawImage(video, 0, 0);
-        };
+    //     video.onplay = function () {
+    //         ctx!.drawImage(video, 0, 0);
+    //     };
 
-        const input = tf.browser.fromPixels(canvas as HTMLCanvasElement);
-        const net = await bodyPix.load({
-            architecture: "MobileNetV1",
-            outputStride: 16,
-            multiplier: 0.75,
-            quantBytes: 2,
-            inputResolution: { width: 640, height: 480 }
-        });
+    //     const input = tf.browser.fromPixels(canvas as HTMLCanvasElement);
+    //     const net = await bodyPix.load({
+    //         architecture: "MobileNetV1",
+    //         outputStride: 16,
+    //         multiplier: 0.75,
+    //         quantBytes: 2,
+    //         inputResolution: { width: 640, height: 480 }
+    //     });
 
-        const segment = await net.estimateMultiplePoses(input, {
-            flipHorizontal: true,
-        });
+    //     const segment = await net.estimateMultiplePoses(input, {
+    //         flipHorizontal: true,
+    //     });
 
-        console.log(segment);
-        return segment;
-    }
+    //     console.log(segment);
+    //     return segment;
+    // }
 
-    test = async (request: express.Request, response: express.Response) => {
-        this.loadAndPredict();
-        response.send((await this.dom).serialize());
-    }
+    // test = async (request: express.Request, response: express.Response) => {
+    //     this.loadAndPredict();
+    //     response.send((await this.dom).serialize());
+    // }
 }
 
 

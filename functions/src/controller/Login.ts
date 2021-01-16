@@ -25,7 +25,6 @@ export class Login {
             const user = await adminAuth.getUser(decodedToken.uid);
             console.log(user.customClaims?.role + '/' + data.employeeId + '/email');
             const query = (await userSchema.child(user.customClaims?.role + '/' + data.employeeId + "/email").get()).val();
-
             if (query && query.toString() === email) {
                 const token = 'Bearer ' + jwt.sign({ uid: user.uid, employeeId: data.employeeId, role: user.customClaims?.role, email: user.email }, 'weeb');
                 response.setHeader('Set-Cookie', cookie.serialize('token', token, {

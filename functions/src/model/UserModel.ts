@@ -28,7 +28,7 @@ interface User extends database.DataSnapshot {
 //     }
 // };
 
-let userSchema = db.ref('users')
+const userSchema = db.ref('users')
 export { userSchema }
 
 
