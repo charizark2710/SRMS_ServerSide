@@ -1,5 +1,5 @@
 import * as express from 'express';
-import admin = require("firebase-admin");
+import admin from "firebase-admin";
 import cookie from "cookie"
 import jwt from "jsonwebtoken";
 

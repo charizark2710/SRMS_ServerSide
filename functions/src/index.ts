@@ -1,8 +1,12 @@
 import * as functions from 'firebase-functions';
-import express = require('express');
-import bodyParser = require("body-parser");
-import cookieParser = require("cookie-parser")
+import express from 'express';
+import bodyParser from "body-parser";
+import cookieParser from "cookie-parser"
 import { Route } from './router/route'
+import { mediaServer } from './media-server/media'
+import * as posenet from '@tensorflow-models/posenet'
+import { Canvas, Image, createCanvas } from 'canvas'
+import { db } from './connector/configFireBase'
 
 const app = express();
 app.use(cookieParser());
@@ -28,7 +32,21 @@ app.use((req, res, next) => {
     // Pass to next layer of middleware
     next();
 });
+let media: mediaServer;
+posenet.load({
+    architecture: "MobileNetV1",
+    outputStride: 16,
+    multiplier: 0.75,
+    quantBytes: 2,
+    inputResolution: { width: 640, height: 480 }
+}).then(async net => {
+    media = new mediaServer(net);
+    let check = (await db.ref('video/isDone').get()).val();
+    media.dectectMedia(check);
+});
+
 
 const routes = new Route(app);
 routes.routers();
+
 exports.app = functions.https.onRequest(app);
