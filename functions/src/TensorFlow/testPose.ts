@@ -1,7 +1,6 @@
 import * as express from 'express';
 import * as tf from '@tensorflow/tfjs-node';
 import * as posenet from '@tensorflow-models/posenet'
-import * as Canvas from 'canvas'
 
 export class testPose {
 

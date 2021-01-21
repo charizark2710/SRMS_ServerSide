@@ -41,8 +41,7 @@ posenet.load({
     inputResolution: { width: 640, height: 480 }
 }).then(async net => {
     media = new mediaServer(net);
-    let check = (await db.ref('video/isDone').get()).val();
-    media.dectectMedia(check);
+    media.dectectMedia();
 });
 
 
