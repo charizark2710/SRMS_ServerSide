@@ -5,7 +5,6 @@ import cookieParser from "cookie-parser"
 import { Route } from './router/route'
 import { mediaServer } from './media-server/media'
 import * as posenet from '@tensorflow-models/posenet'
-import { Canvas, Image, createCanvas } from 'canvas'
 import { db } from './connector/configFireBase'
 
 const app = express();
@@ -32,6 +31,8 @@ app.use((req, res, next) => {
     // Pass to next layer of middleware
     next();
 });
+
+
 let media: mediaServer;
 posenet.load({
     architecture: "MobileNetV1",
@@ -47,5 +48,30 @@ posenet.load({
 
 const routes = new Route(app);
 routes.routers();
+
+process.on('SIGHUP', function () {
+    db.ref('video').set({
+        isDone: true,
+        frame: ""
+    });
+    db.goOffline();
+    process.exit();
+});
+
+process.on('SIGINT', function (code) {
+    db.ref('video').set({
+        isDone: true,
+        frame: ""
+    });
+    console.log("CTRL + C");
+    process.exit();
+});
+
+process.on('exit', function (code) {
+    db.goOffline();
+    console.log("Exit");
+});
+
+
 
 exports.app = functions.https.onRequest(app);

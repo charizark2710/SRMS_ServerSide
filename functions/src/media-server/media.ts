@@ -71,7 +71,5 @@ export class mediaServer {
             console.error(e);
             db.ref('video').off();
         }
-
-
     }
 }
