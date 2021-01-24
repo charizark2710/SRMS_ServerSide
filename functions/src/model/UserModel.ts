@@ -1,6 +1,5 @@
 import { database } from "firebase-admin";
 import { db } from '../connector/configFireBase'
-import firebase = require("firebase-functions");
 
 interface User extends database.DataSnapshot {
     name: string;
@@ -28,7 +27,7 @@ interface User extends database.DataSnapshot {
 //     }
 // };
 
-let userSchema = db.ref('users')
+const userSchema = db.ref('users')
 export { userSchema }
 
 

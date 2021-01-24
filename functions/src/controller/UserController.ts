@@ -91,7 +91,6 @@ export class UserController {
                             deletedAt: null
                         });
                     }
-                    console.log(result);
                     const role = (await adminAuth.getUser(data.uid)).customClaims?.role;
                     const token = 'Bearer ' + jwt.sign({ uid: data.uid, employeeId: data.employeeId, role: role, email: data.email }, 'weeb');
                     response.setHeader('Set-Cookie', cookie.serialize('token', token, {
@@ -127,7 +126,6 @@ export class UserController {
             // await userSchema.doc(request.params.id).update({
             //     password: password,
             // });
-            userSchema.once("value")
             return response.send(user);
         } catch (error) {
             response.status(500).send(error);

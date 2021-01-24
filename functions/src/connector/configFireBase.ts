@@ -1,5 +1,5 @@
 import * as functions from 'firebase-functions';
-import admin = require("firebase-admin");
+import admin from "firebase-admin";
 import * as firebase from 'firebase'
 
 
@@ -25,5 +25,6 @@ const firebaseConfig = {
 const client = firebase.default.initializeApp(firebaseConfig);
 const adminAuth = adminstrator.auth();
 const db = admin.database();
+db.goOnline();
 console.log("connected");
 export { adminAuth, adminstrator, db, client }
