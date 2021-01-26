@@ -25,6 +25,7 @@ const firebaseConfig = {
 const client = firebase.default.initializeApp(firebaseConfig);
 const adminAuth = adminstrator.auth();
 const db = admin.database();
+const messaging = admin.messaging();
 db.goOnline();
 console.log("connected");
-export { adminAuth, adminstrator, db, client }
+export { adminAuth, adminstrator, db, client, messaging }

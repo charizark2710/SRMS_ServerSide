@@ -6,6 +6,7 @@ import { Route } from './router/route'
 import { mediaServer } from './media-server/media'
 import * as posenet from '@tensorflow-models/posenet'
 import { db } from './connector/configFireBase'
+import notification from './controller/NotificationManagement'
 
 const app = express();
 app.use(cookieParser());
@@ -45,6 +46,7 @@ posenet.load({
     media.dectectMedia();
 });
 
+notification.receiveMessage();
 
 const routes = new Route(app);
 routes.routers();
@@ -71,7 +73,5 @@ process.on('exit', function (code) {
     db.goOffline();
     console.log("Exit");
 });
-
-
 
 exports.app = functions.https.onRequest(app);

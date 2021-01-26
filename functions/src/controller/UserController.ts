@@ -6,7 +6,8 @@ import * as validator from 'express-validator';
 import auth from './Authenticate';
 import authorized from './Authorized';
 import cookie from "cookie";
-import jwt from "jsonwebtoken";
+import jwt from "jsonwebtoken"
+import notification from './NotificationManagement'
 
 export class UserController {
     public router = express.Router();
@@ -67,26 +68,29 @@ export class UserController {
                         const idNum = data.email?.match('/[a-zA-Z]+|[0-9]+(?:\.[0-9]+)?|\.[0-9]+/g')?.toString();
                         if (idNum?.length! >= 4) {
                             await adminAuth.setCustomUserClaims(data.uid, { role: 'student' });
-                            result = userSchema.child("student/" + data.employeeId).set({
+                            result = userSchema.child(data.employeeId).set({
                                 email: data.email!,
                                 name: data.name!,
                                 deleted: false,
+                                uid: data.uid!,
                                 deletedAt: null
                             });
                         } else {
                             await adminAuth.setCustomUserClaims(data.uid, { role: 'lecture' });
-                            result = userSchema.child("lecture/" + data.employeeId).set({
+                            result = userSchema.child(data.employeeId).set({
                                 email: data.email!,
                                 name: data.name!,
+                                uid: data.uid!,
                                 deleted: false,
                                 deletedAt: null
                             });
                         }
                     } else {
                         await adminAuth.setCustomUserClaims(data.uid, { role: 'admin' });
-                        result = userSchema.child("admin/" + data.employeeId).set({
+                        result = userSchema.child(data.employeeId).set({
                             email: data.email!,
                             name: data.name!,
+                            uid: data.uid!,
                             deleted: false,
                             deletedAt: null
                         });
@@ -189,7 +193,14 @@ export class UserController {
         try {
             const uid = request.params.id;
             // const user = await userSchema.doc(uid).get();
-            const user = await userSchema.child(response.locals.role).child(uid).get();
+            const user = await userSchema.child(uid).get();
+            notification.sendMessage({
+                message: "You view Yourself",
+                receiver: user.val().uid,
+                sender: 'admin',
+                sendAt: (new Date()).toString(),
+                isRead: false
+            })
             response.json(user.val());
         } catch (error) {
             console.log(error);

@@ -4,6 +4,7 @@ import { adminAuth } from "../connector/configFireBase"
 import cookie from "cookie"
 import jwt from "jsonwebtoken";
 import { UserController } from './UserController'
+import notification from './NotificationManagement'
 
 export class Login {
     router = express.Router();
@@ -23,10 +24,10 @@ export class Login {
             const email = decodedToken.email;
             // const query = await userSchema.where('deleted', '==', false).where('email', '==', email).get();
             const user = await adminAuth.getUser(decodedToken.uid);
-            console.log(user.customClaims?.role + '/' + data.employeeId + '/email');
-            const query = (await userSchema.child(user.customClaims?.role + '/' + data.employeeId + "/email").get()).val();
+            const query = (await userSchema.child(data.employeeId + "/email").get()).val();
             if (query && query.toString() === email) {
                 const token = 'Bearer ' + jwt.sign({ uid: user.uid, employeeId: data.employeeId, role: user.customClaims?.role, email: user.email }, 'weeb');
+                notification.sendMessage({sender: data.employeeId, message: "User".concat(data.employeeId,' Logged'), receiver:"admin", sendAt: (new Date()).toString(), isRead: false});
                 response.setHeader('Set-Cookie', cookie.serialize('token', token, {
                     httpOnly: true,
                     maxAge: 60 * 60
@@ -36,8 +37,10 @@ export class Login {
                 request.body = { email: email, uid: data.uid, name: data.name, employeeId: data.employeeId };
                 const controller = new UserController();
 
-                controller.addUser(request, response);
+                await controller.addUser(request, response);
+                notification.sendMessage({sender: data.employeeId, message: "User".concat(data.employeeId,' is Added'), receiver:"admin", sendAt: (new Date()).toString(), isRead: false});
             }
+
         } catch (e) {
             console.log(e);
             response.status(500).json({ error: e });
