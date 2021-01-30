@@ -2,11 +2,10 @@ import * as functions from 'firebase-functions';
 import admin from "firebase-admin";
 import * as firebase from 'firebase'
 
-
 const adminstrator = admin.initializeApp({
     credential: admin.credential.cert({
         privateKey: functions.config().service.private_key.replace(/\\n/g, '\n'),
-        projectId: process.env.GCLOUD_PROJECT,
+        projectId: functions.config().service.project_id,
         clientEmail: functions.config().service.client_email,
     }),
     databaseURL: functions.config().service.database_url,

@@ -8,7 +8,7 @@ export default function authorized(opts: { hasRole: Array<'admin' | 'student' | 
             return next();
         }
         if (!local.role) {
-            return res.status(403).send('Chua dang nhap');
+            return res.status(403).redirect('http://localhost:3000/login');
         }
         if (opts.hasRole.includes(local.role) && local.employeeId === id) {
             return next()
