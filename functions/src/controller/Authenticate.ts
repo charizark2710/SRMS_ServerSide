@@ -7,7 +7,7 @@ export default async function auth(req: express.Request, res: express.Response, 
     try {
         const cookies = cookie.parse(req.headers.cookie || '');
         if (!cookies.token) {
-            return res.status(401).redirect('http://localhost:3000/login');
+            return res.status(401).send({ message: 'Unauthorized' });
         } else if (!cookies.token.startsWith('Bearer')) {
             return res.status(401).send({ message: 'Unauthorized' });
         } else {

@@ -53,7 +53,7 @@ export class Login {
                 const token = 'Bearer ' + jwt.sign({ uid: data.uid, employeeId: data.employeeId, role: role, email: email }, functions.config().other.secretOrPublicKey as string);
                 response.setHeader('Set-Cookie', cookie.serialize('token', token, {
                     httpOnly: true,
-                    maxAge: 60 * 60
+                    maxAge: 60 * 60,
                 }));
                 return response.json('ok');
             } else {
@@ -69,7 +69,7 @@ export class Login {
                 const token = 'Bearer ' + jwt.sign({ uid: data.uid, employeeId: data.employeeId, role: role, email: data.email }, functions.config().other.secretOrPublicKey as string);
                 response.setHeader('Set-Cookie', cookie.serialize('token', token, {
                     httpOnly: true,
-                    maxAge: 60 * 60
+                    maxAge: 60 * 60,
                 }));
                 return response.json('ok');
             }

@@ -11,7 +11,10 @@ export class Logout {
 
     init() {
         this.router.post('/logout', (request: express.Request, response: express.Response) => {
-            response.clearCookie('token');
+            response.setHeader('Set-Cookie', cookie.serialize('token', '', {
+                expires: new Date()
+            }));
+             response.json("user logout");
         });
     }
 }
