@@ -19,7 +19,7 @@ class notificationManagement {
     }
 
     sendMessage = (onload: message) => {
-        db.ref('notification'.concat('/', onload.receiver)).child(onload.sendAt.toString()).set(onload);
+        db.ref('notification').child(onload.receiver).child(onload.sendAt.toString()).set(onload);
     }
 }
 

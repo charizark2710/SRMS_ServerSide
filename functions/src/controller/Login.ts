@@ -56,7 +56,7 @@ export class Login {
                     maxAge: 60 * 60,
                 }));
                 return response.json('ok');
-            } else {
+            } else if(eType === 'fe.edu.vn'){
                 await adminAuth.setCustomUserClaims(data.uid, { role: 'admin' });
                 result = userSchema.child(data.employeeId).set({
                     email: email!,
@@ -72,6 +72,8 @@ export class Login {
                     maxAge: 60 * 60,
                 }));
                 return response.json('ok');
+            } else {
+                return response.status(400).json({error: "Sai Email"});
             }
 
         } catch (e) {

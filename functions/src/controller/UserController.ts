@@ -97,7 +97,7 @@ export class UserController {
             const user = await userSchema.child(uid).get();
             notification.sendMessage({
                 message: "You view Yourself",
-                receiver: user.val().uid,
+                receiver: user.val().email?.split('@')[0],
                 sender: 'admin',
                 sendAt: (new Date()).toString(),
                 isRead: false
