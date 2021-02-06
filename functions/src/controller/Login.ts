@@ -23,9 +23,6 @@ export class Login {
             const data = request.body;
             const decodedToken = await adminAuth.verifyIdToken(data.idToken);
             const email = decodedToken.email;
-            // const query = await userSchema.where('deleted', '==', false).where('email', '==', email).get();
-            const user = await adminAuth.getUser(decodedToken.uid);
-            const query = (await userSchema.child(data.employeeId + "/email").get()).val();
             let result;
             const eType = email?.split('@')[1];
             if (eType === 'fpt.edu.vn') {
