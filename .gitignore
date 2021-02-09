@@ -1,3 +1,6 @@
+.gitignore
+.firebaserc
+firebase.json
 # Logs
 logs
 *.log

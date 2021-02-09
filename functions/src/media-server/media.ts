@@ -13,7 +13,7 @@ export class mediaServer {
     }
 
     async loadImage(uri: string) {
-        let image = new Image();
+        const image = new Image();
         const promise = new Promise<Image>((resolve, reject) => {
             image.onload = () => {
                 resolve(image);
@@ -24,21 +24,22 @@ export class mediaServer {
         return promise;
     }
 
-    dectectMedia = async () => {
+    async dectectMedia() {
         try {
+            const $this = this;
             db.ref('video').on('child_changed', async (snap) => {
                 try {
-                    if (typeof snap.val() != 'boolean') {
+                    if (typeof snap.val() !== 'boolean') {
                         const canvas = createCanvas(480, 640);
                         const ctx = canvas.getContext('2d');
 
-                        const image: Image = await this.loadImage(snap.val());
+                        const image: Image = await $this.loadImage(snap.val());
 
                         ctx.drawImage(image, 0, 0);
                         image.onerror = () => {
                             throw new Error('Failed to load image');
                         }
-                        await this.pose.loadAndPredict(canvas);
+                        await $this.pose.loadAndPredict(canvas);
                         db.ref('video').set({ frame: "", isDone: true });
                     } else {
                         console.log(snap.val());
@@ -50,7 +51,7 @@ export class mediaServer {
             });
 
             db.ref('video').off('child_changed', async (snap) => {
-                if (typeof snap.val() != 'boolean') {
+                if (typeof snap.val() !== 'boolean') {
                     const image = new Image();
                     const canvas = createCanvas(480, 640);
                     const ctx = canvas.getContext('2d');
@@ -61,7 +62,7 @@ export class mediaServer {
                         throw new Error('Failed to load image');
                     }
                     image.src = snap.val();
-                    await this.pose.loadAndPredict(canvas);
+                    await $this.pose.loadAndPredict(canvas);
                     db.ref('video').set({ frame: "", isDone: true });
                 } else {
                     console.log(snap.val());

@@ -6,6 +6,7 @@ import { Route } from './router/route'
 import { mediaServer } from './media-server/media'
 import * as posenet from '@tensorflow-models/posenet'
 import { db } from './connector/configFireBase'
+import notification from './controller/NotificationManagement'
 
 const app = express();
 app.use(cookieParser());
@@ -16,6 +17,7 @@ app.set('view engine', 'html');
 app.use((req, res, next) => {
 
     // Website you wish to allow to connect
+    // res.setHeader('Access-Control-Allow-Origin', 'https://booming-pride-283013.web.app');
     res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
 
     // Request methods you wish to allow
@@ -45,6 +47,7 @@ posenet.load({
     media.dectectMedia();
 });
 
+notification.receiveMessage();
 
 const routes = new Route(app);
 routes.routers();
@@ -71,7 +74,5 @@ process.on('exit', function (code) {
     db.goOffline();
     console.log("Exit");
 });
-
-
 
 exports.app = functions.https.onRequest(app);

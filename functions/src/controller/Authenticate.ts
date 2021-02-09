@@ -1,5 +1,5 @@
 import * as express from 'express';
-import admin from "firebase-admin";
+import * as functions from 'firebase-functions';
 import cookie from "cookie"
 import jwt from "jsonwebtoken";
 
@@ -7,7 +7,7 @@ export default async function auth(req: express.Request, res: express.Response, 
     try {
         const cookies = cookie.parse(req.headers.cookie || '');
         if (!cookies.token) {
-            return res.status(401).json({ message: "Authentication Failed" });
+            return res.status(401).send({ message: 'Unauthorized' });
         } else if (!cookies.token.startsWith('Bearer')) {
             return res.status(401).send({ message: 'Unauthorized' });
         } else {
@@ -16,8 +16,8 @@ export default async function auth(req: express.Request, res: express.Response, 
                 return res.status(401).send({ message: 'Unauthorized' });
             const token = split[1];
             try {
-                jwt.verify(token, 'weeb', (err, decoded: any) => {
-                    console.log("decodedToken: ", JSON.stringify(decoded))
+
+                jwt.verify(token, functions.config().other.secretOrPublicKey as string, (err, decoded: any) => {
                     res.locals = { ...res.locals, uid: decoded?.uid, role: decoded?.role, email: decoded?.email, employeeId: decoded?.employeeId };
                 });
                 next();
