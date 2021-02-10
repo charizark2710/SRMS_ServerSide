@@ -11,14 +11,13 @@ export class testPose {
         this.net = net;
     }
 
-    async loadAndPredict(canvas: any) {
-        const $this = this;
+    loadAndPredict = async (canvas: any) => {
         try {
             // const canvas = Canvas.createCanvas(480, 640);
             // const image = new Canvas.Image();
             // const ctx = canvas.getContext('2d').drawImage(image,0,0);
             const input: any = tf.browser.fromPixels(canvas);
-            $this.net.estimateSinglePose(input, {
+            this.net.estimateSinglePose(input, {
                 flipHorizontal: true,
             }).then(pose => {
                 console.log(pose);

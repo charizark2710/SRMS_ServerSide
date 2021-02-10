@@ -1,24 +1,41 @@
 import { userSchema } from '../model/UserModel'
 import * as express from 'express';
-import { adminAuth } from "../connector/configFireBase"
+import { db, adminAuth } from "../connector/configFireBase"
 import bycrypt from 'bcryptjs'
 import auth from './Authenticate';
 import authorized from './Authorized';
 import notification from './NotificationManagement'
 
-export class UserController {
+export class Room{
     public router = express.Router();
-    path = '/users'
+    path = '/room'
     constructor() {
         this.init();
     }
 
     init() {
-        this.router.patch(this.path + "/edit/:id", auth, authorized({ hasRole: ['admin'] }), this.editUser);
-        this.router.delete(this.path + "/delete/:id", auth, authorized({ hasRole: ['admin'] }), this.deleteUser);
-        this.router.patch(this.path + "/banned/:id/restore", auth, authorized({ hasRole: ['admin', 'student', 'lecture'] }), this.restoreUser);
-        this.router.get(this.path + '/:id', auth, authorized({ hasRole: ['admin', 'student', 'lecture'] }), this.getUser);
+        this.router.patch(this.path, this.switchDeviceStatus);
+        // this.router.delete(this.path + "/delete/:id", auth, authorized({ hasRole: ['admin'] }), this.deleteRoom);
+        // this.router.patch(this.path + "/banned/:id/restore", auth, authorized({ hasRole: ['admin', 'student', 'lecture'] }), this.restoreRoom);
+        // this.router.get(this.path + '/:id', auth, authorized({ hasRole: ['admin', 'student', 'lecture'] }), this.getUser);
     }
+
+
+
+    //nhận về room, type và trạng thái device
+    //dựa vào room và type device, update trạng thái
+    switchDeviceStatus=async (request: express.Request, response: express.Response)=>{
+        try {
+            var data = request.body;
+            var updatedStatus=await db.ref('room/'+data.roomName+"/"+data.deviceType).update(!data.diviceStatus)
+            return response.send("ok");
+        } catch (error) {
+            response.status(500).send(error);
+        }
+    }
+
+    
+
 
     editUser = async (request: express.Request, response: express.Response) => {
         try {

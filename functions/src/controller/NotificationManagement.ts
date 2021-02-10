@@ -5,6 +5,10 @@ import message from '../model/Message'
 class notificationManagement {
     router = express.Router();
 
+    constructor() {
+
+    }
+
     receiveMessage = () => {
         db.ref('notification/admin').on('child_added', snap => {
             const mail: message = snap.val();
@@ -15,7 +19,7 @@ class notificationManagement {
     }
 
     sendMessage = (onload: message) => {
-        db.ref('notification').child(onload.receiver).child(onload.sendAt.toString()).set(onload);
+        db.ref('notification'.concat('/', onload.receiver)).child(onload.sendAt.toString()).set(onload);
     }
 }
 

@@ -19,10 +19,15 @@ export class Login {
     }
 
     login = async (request: express.Request, response: express.Response) => {
+     
         try {
             const data = request.body;
             const decodedToken = await adminAuth.verifyIdToken(data.idToken);
             const email = decodedToken.email;
+            // const query = await userSchema.where('deleted', '==', false).where('email', '==', email).get();
+            const user = await adminAuth.getUser(decodedToken.uid);
+            const query = (await userSchema.child(data.employeeId + "/email").get()).val();
+            console.log(query);
             let result;
             const eType = email?.split('@')[1];
             if (eType === 'fpt.edu.vn') {
@@ -53,7 +58,7 @@ export class Login {
                     maxAge: 60 * 60,
                 }));
                 return response.json('ok');
-            } else if(eType === 'fe.edu.vn'){
+            } else {
                 await adminAuth.setCustomUserClaims(data.uid, { role: 'admin' });
                 result = userSchema.child(data.employeeId).set({
                     email: email!,
@@ -69,8 +74,6 @@ export class Login {
                     maxAge: 60 * 60,
                 }));
                 return response.json('ok');
-            } else {
-                return response.status(400).json({error: "Sai Email"});
             }
 
         } catch (e) {
