@@ -3,8 +3,6 @@ import { userSchema } from "../model/UserModel";
 import { adminAuth } from "../connector/configFireBase"
 import cookie from "cookie"
 import jwt from "jsonwebtoken";
-import { UserController } from './UserController'
-import notification from './NotificationManagement'
 import * as functions from 'firebase-functions';
 
 export class Login {
@@ -72,7 +70,6 @@ export class Login {
             } else {
                 return response.status(400).json({error: "Sai Email"});
             }
-
         } catch (e) {
             console.log(e);
             response.status(500).json({ error: e });
