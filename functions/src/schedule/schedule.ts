@@ -1,41 +1,21 @@
 import * as buffer from './scheduleBuffer'
 
 export default class Schedule {
-    fullDate: Date = new Date();
-    year: string = '';
-    month: string = '';
-    date: string = '';
-    temp: string = '';
-    hours: string = '';
-    minutes: string = '';
-    second: string = '';
 
-    getCurrentTime = () => {
-        this.fullDate = new Date();
-        this.year = this.fullDate.getFullYear().toString();
-        this.month = this.fullDate.getMonth().toString();
-        this.date = this.fullDate.getDate().toString();
-        this.temp = this.fullDate.getHours().toString();
-        this.hours = this.temp.length === 2 ? this.temp : '0' + this.temp;
-        this.temp = this.fullDate.getMinutes().toString();
-        this.minutes = this.temp.length === 2 ? this.temp : '0' + this.temp;
-        this.temp = this.fullDate.getSeconds().toString();
-        this.second = this.temp.length === 2 ? this.temp : '0' + this.temp;
+    constructor() {
+        this.setSchedule();
     }
 
-    setSchedule = () => {
-        this.getCurrentTime();
-        const fullText = this.year.concat(this.month, this.date);
+    setSchedule = async () => {
+        await buffer.defineDay();
+        const fullDate = buffer.fullDay.currentDay;
+        console.log(buffer.fullDay);
+        const fullText = fullDate.year.concat(fullDate.month, fullDate.date);
         buffer.getBuffer(fullText);
+        console.log(buffer.dateBuffer, '-', buffer.timeBuffer);
         setInterval(this.timer, 1000, fullText);
     }
 
     timer = (fullText: string) => {
-        this.temp = this.fullDate.getHours().toString();
-        this.hours = this.temp.length === 2 ? this.temp : '0' + this.temp;
-        this.temp = this.fullDate.getMinutes().toString();
-        this.minutes = this.temp.length === 2 ? this.temp : '0' + this.temp;
-        this.temp = this.fullDate.getSeconds().toString();
-        this.second = this.temp.length === 2 ? this.temp : '0' + this.temp;
     }
 }
