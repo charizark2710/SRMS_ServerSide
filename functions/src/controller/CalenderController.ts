@@ -153,8 +153,29 @@ export default class CalendarController {
     addSchedule = async (request: express.Request, response: express.Response) => {
         try {
             const data: DynamicCalendar = request.body;
-            calendarSchema.child("dynamic").child(data.date).set(data);
-            response.status(200).send('ok');
+            const reqFrom = parseInt(data.from);
+            const reqTo = parseInt(data.to);
+            let isOcc: boolean = false;
+            isOcc = (await calendarSchema.child('dynamic').orderByKey().startAt(data.date + " ").endAt(data.date + "~").get()).forEach(snap => {
+                const value = snap.val();
+                const from = parseInt(value.from);
+                const to = parseInt(value.to);
+                if (value.date === data.date) {
+                    if (reqFrom === from || reqTo === to) {
+                        return true;
+                    } else if (reqFrom > from && reqFrom < to) {
+                        return true;
+                    } else if (reqTo > from && reqTo < to) {
+                        return true;
+                    }
+                }
+            });
+            if (!isOcc) {
+                calendarSchema.child("dynamic").child(data.date.concat('-', data.from, '-', data.to, '-', data.room)).set(data);
+                response.status(200).send('ok');
+            } else {
+                response.status(400).send('Lich kin roi');
+            }
         } catch (error) {
             response.status(500).send(error);
         }

@@ -8,41 +8,37 @@ async function defineDay() {
     Object.defineProperty(fullDay, 'currentDay', {
         get: function () {
             const fullDate = new Date();
-            const tempM = fullDate.getMonth().toString();
+            const tempM = (fullDate.getMonth() + 1).toString();
             const tempD = fullDate.getDate().toString();
-            const tempH = fullDate.getHours().toString();
-            const tempMin = fullDate.getMinutes().toString();
-            const tempS = fullDate.getSeconds().toString();
-
             return {
                 year: fullDate.getFullYear().toString(),
                 month: tempM.length === 2 ? tempM : '0' + tempM,
                 date: tempD.length === 2 ? tempD : '0' + tempD,
-                hours: tempH.length === 2 ? tempH : '0' + tempH,
-                minutes: tempMin.length === 2 ? tempMin : '0' + tempMin,
-                second: tempS.length === 2 ? tempS : '0' + tempS,
             }
+        },
+        set: function (val) {
+            this.currentDay = val;
         }
     });
 }
 
 function getBuffer(fullText: string) {
     calendarSchema.child('dynamic').on('child_added', snap => {
-        const value = (snap.val().date as string).split('-');
-        if (value[0].match(fullText)) {
-            const date = value[0];
-            const time = value[1];
-            dateBuffer.push(date);
-            timeBuffer.push(time);
+        const value = snap.val();
+        const date = value.date;
+        const time = (value.from as string).concat('-', value.to);
+        if (date === fullText) {
+            // dateBuffer.push(value.userId + "-" + date + '-' + value.room + '-' + value.reason);
+            timeBuffer.push(value.userId + "-" + time + '-' + value.room + '-' + value.reason);
         }
     });
     calendarSchema.child('dynamic').off('child_added', snap => {
-        const value = (snap.val().date as string).split('-');
-        if (value[0].match(fullText)) {
-            const date = value[0];
-            const time = value[1];
-            dateBuffer.push(date);
-            timeBuffer.push(time);
+        const value = snap.val();
+        const date = value.date;
+        const time = (value.from as string).concat('-', value.to);
+        if (date === fullText) {
+            // dateBuffer.push(value.userId + "-" + date + '-' + value.room + '-' + value.reason);
+            timeBuffer.push(value.userId + "-" + time + '-' + value.room + '-' + value.reason);
         }
     });
 }
@@ -52,16 +48,22 @@ function deleteBuffer() {
         const value = (snap.val().date as string).split('-');
         const date = value[0];
         const time = value[1];
-        dateBuffer.filter(item => item !== date);
-        timeBuffer.filter(item => item !== time);
+        dateBuffer.filter(item => (item !== date));
+        timeBuffer.filter(item => (item !== time));
     });
     calendarSchema.child('dynamic').off('child_removed', snap => {
         const value = (snap.val().date as string).split('-');
         const date = value[0];
         const time = value[1];
-        dateBuffer.filter(item => item !== date);
-        timeBuffer.filter(item => item !== time);
+        dateBuffer.filter(item => (item !== date));
+        timeBuffer.filter(item => (item !== time));
     });
 }
 
-export { dateBuffer, timeBuffer, getBuffer, deleteBuffer, defineDay, fullDay };
+function clearBuffer() {
+    dateBuffer = [];
+    timeBuffer = [];
+    calendarSchema.child('dynamic').off('child_added');
+}
+
+export { dateBuffer, timeBuffer, getBuffer, deleteBuffer, defineDay, fullDay, clearBuffer };

@@ -7,6 +7,7 @@ import { mediaServer } from './media-server/media'
 import * as posenet from '@tensorflow-models/posenet'
 import { db } from './connector/configFireBase'
 import notification from './controller/NotificationManagement'
+import Schedule from './schedule/schedule'
 
 const app = express();
 app.use(cookieParser());
@@ -34,6 +35,7 @@ app.use((req, res, next) => {
     next();
 });
 
+const s: Schedule = new Schedule();
 
 let media: mediaServer;
 posenet.load({
