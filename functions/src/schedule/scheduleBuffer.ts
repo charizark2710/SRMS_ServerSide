@@ -41,6 +41,8 @@ function getBuffer(fullText: string) {
             timeBuffer.push(value.userId + "-" + time + '-' + value.room + '-' + value.reason);
         }
     });
+
+    // thay đổi là xóa đi thêm lại nên không cần child_changed
 }
 
 function deleteBuffer() {
