@@ -29,6 +29,9 @@ posenet.load({
 
 socketServer.on('connection', (socket: io.Socket) => {
     console.log((new Date()) + ' Connection accepted ' + socket.client);
+    while (!media) {
+        console.log('wait to finish');
+    }
     socket.emit('sendNoti', 'done');
     media.dectectMedia(socket);
     socket.on('disconnect', function (reason) {
