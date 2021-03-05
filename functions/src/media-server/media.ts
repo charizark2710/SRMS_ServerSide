@@ -1,9 +1,9 @@
 import child_process from 'child_process';
 import { db } from '../connector/configFireBase'
-import { Canvas, Image, createCanvas } from 'canvas'
+import { Image, createCanvas } from 'canvas'
 import { testPose } from '../TensorFlow/testPose'
 import * as posenet from '@tensorflow-models/posenet'
-
+import * as io from 'socket.io'
 export class mediaServer {
     spawn = child_process.spawn;
     pose: testPose;
@@ -12,60 +12,58 @@ export class mediaServer {
         this.pose = new testPose(net);
     }
 
-    async loadImage(uri: string) {
+    async loadImage(uri: string | undefined) {
         const image = new Image();
         const promise = new Promise<Image>((resolve, reject) => {
             image.onload = () => {
                 resolve(image);
             };
         });
-        image.src = uri;
-
-        return promise;
+        if (uri) {
+            image.src = uri;
+            return promise;
+        }
     }
 
-    async dectectMedia() {
+    async dectectMedia(connection: io.Socket) {
         try {
             const $this = this;
-            db.ref('video').on('child_changed', async (snap) => {
+            connection.on('sendFPS', async (message) => {
                 try {
-                    if (typeof snap.val() !== 'boolean') {
-                        const canvas = createCanvas(480, 640);
-                        const ctx = canvas.getContext('2d');
+                    const canvas = createCanvas(480, 640);
+                    const ctx = canvas.getContext('2d');
 
-                        const image: Image = await $this.loadImage(snap.val());
-
+                    const image = await $this.loadImage(message) as Image;
+                    if (image) {
                         ctx.drawImage(image, 0, 0);
                         image.onerror = () => {
                             throw new Error('Failed to load image');
                         }
-                        await $this.pose.loadAndPredict(canvas);
-                        db.ref('video').set({ frame: "", isDone: true });
-                    } else {
-                        console.log(snap.val());
+                        $this.pose.loadAndPredict(canvas).then(() => {
+                            connection.emit("sendNoti", 'done');
+                        });
                     }
-                } catch (e) {
-                    db.ref('video').set({ frame: "", isDone: true });
-                    console.log(e);
+                } catch (error) {
+                    console.log(error);
                 }
             });
-
-            db.ref('video').off('child_changed', async (snap) => {
-                if (typeof snap.val() !== 'boolean') {
-                    const image = new Image();
+            connection.off('message', async (message) => {
+                try {
                     const canvas = createCanvas(480, 640);
                     const ctx = canvas.getContext('2d');
-                    image.onload = () => {
+
+                    const image = await $this.loadImage(message) as Image;
+                    if (image) {
                         ctx.drawImage(image, 0, 0);
+                        image.onerror = () => {
+                            throw new Error('Failed to load image');
+                        }
+                        $this.pose.loadAndPredict(canvas).then(() => {
+                            connection.emit("sendNoti", 'done');
+                        });
                     }
-                    image.onerror = () => {
-                        throw new Error('Failed to load image');
-                    }
-                    image.src = snap.val();
-                    await $this.pose.loadAndPredict(canvas);
-                    db.ref('video').set({ frame: "", isDone: true });
-                } else {
-                    console.log(snap.val());
+                } catch (error) {
+                    console.log(error);
                 }
             });
         } catch (e) {
