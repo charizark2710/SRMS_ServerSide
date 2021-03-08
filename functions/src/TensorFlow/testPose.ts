@@ -27,8 +27,3 @@ export class testPose {
         }
     }
 }
-
-
-
-
-
