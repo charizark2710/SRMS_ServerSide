@@ -66,7 +66,7 @@ export class UserController {
             const data = await user.val();
             // const user = await userSchema.doc(uid).get();
             // const data = user.data();
-            if (user.exists && data?.banned) {
+            if (user.exists() && data?.banned) {
                 // await userSchema.doc(uid).update({
                 //     banned: false,
                 //     bannedAt: null
@@ -97,7 +97,7 @@ export class UserController {
             const user = await userSchema.child(uid).get();
             notification.sendMessage({
                 message: "You view Yourself",
-                receiver: user.val().email?.split('@')[0],
+                receiver: user.val().uid,
                 sender: 'admin',
                 sendAt: (new Date()).toString(),
                 isRead: false

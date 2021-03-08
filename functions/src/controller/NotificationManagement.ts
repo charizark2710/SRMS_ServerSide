@@ -15,8 +15,10 @@ class notificationManagement {
     }
 
     sendMessage = (onload: message) => {
-        db.ref('notification').child(onload.receiver).child(onload.sendAt.toString()).set(onload);
+        db.ref('notification').child(onload.receiver).child(onload.id.toString()).set(onload);
     }
+
+
 }
 
 const notification = new notificationManagement();
