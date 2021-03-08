@@ -3,8 +3,6 @@ import { userSchema } from "../model/UserModel";
 import { adminAuth } from "../connector/configFireBase"
 import cookie from "cookie"
 import jwt from "jsonwebtoken";
-import { UserController } from './UserController'
-import notification from './NotificationManagement'
 import * as functions from 'firebase-functions';
 
 export class Login {
@@ -19,15 +17,10 @@ export class Login {
     }
 
     login = async (request: express.Request, response: express.Response) => {
-     
         try {
             const data = request.body;
             const decodedToken = await adminAuth.verifyIdToken(data.idToken);
             const email = decodedToken.email;
-            // const query = await userSchema.where('deleted', '==', false).where('email', '==', email).get();
-            const user = await adminAuth.getUser(decodedToken.uid);
-            const query = (await userSchema.child(data.employeeId + "/email").get()).val();
-            console.log(query);
             let result;
             const eType = email?.split('@')[1];
             if (eType === 'fpt.edu.vn') {
@@ -58,7 +51,7 @@ export class Login {
                     maxAge: 60 * 60,
                 }));
                 return response.json('ok');
-            } else {
+            } else if(eType === 'fe.edu.vn'){
                 await adminAuth.setCustomUserClaims(data.uid, { role: 'admin' });
                 result = userSchema.child(data.employeeId).set({
                     email: email!,
@@ -74,8 +67,9 @@ export class Login {
                     maxAge: 60 * 60,
                 }));
                 return response.json('ok');
+            } else {
+                return response.status(400).json({error: "Sai Email"});
             }
-
         } catch (e) {
             console.log(e);
             response.status(500).json({ error: e });
