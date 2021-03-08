@@ -6,7 +6,7 @@ import auth from './Authenticate';
 import authorized from './Authorized';
 import notification from './NotificationManagement'
 
-export class BookRoom {
+export class BookRoomController {
     public router = express.Router();
     path = '/bookRoom'
     constructor() {
@@ -48,7 +48,7 @@ export class BookRoom {
                             message: ' sent a request to book room ' + data.roomName + ' at ' + data.date + ' from ' + data.startTime + ' to ' + data.endTime,
                             receiver: "thanhntse63563",//fake account admin
                             sender: data.userId,
-                            sendAt: (new Date()).toString(),
+                            sendAt: fullDate,
                             isRead: false,
                             typeRequest: 'bookRoomRequest',//có 3 loại, dựa vào typeRequest để truy cập đúng bảng
                             id: id,

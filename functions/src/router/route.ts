@@ -1,15 +1,19 @@
 import express from 'express';
-import { UserController } from '../controller/UserController';
 import { Login } from '../controller/Login'
 import { Logout } from '../controller/Logout'
-import CalendarController from '../controller/CalenderController'
 import auth from '../controller/Authenticate';
+import CalendarController from '../controller/CalenderController'
+import { UserController } from '../controller/UserController';
+import { BookRoomController } from '../controller/BookRoomController'
+import { RoomController } from '../controller/RoomController'
 
 export class Route {
     app: express.Application;
 
     userController = new UserController();
     calendarController = new CalendarController();
+    bookRoomController = new BookRoomController();
+    roomController = new RoomController();
     login = new Login();
     logout = new Logout();
     constructor(app: express.Application) {
@@ -22,6 +26,8 @@ export class Route {
         });
         this.app.use('/', this.userController.router);
         this.app.use('/', this.calendarController.router);
+        this.app.use('/', this.bookRoomController.router);
+        this.app.use('/', this.roomController.router);
         this.app.use('/', this.login.router);
         this.app.use('/', this.logout.router);
     }

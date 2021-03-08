@@ -5,6 +5,6 @@ export default interface message {
     message: string,
     sendAt: string,
     isRead: boolean,
-    typeRequest:string,
-    status:string
+    typeRequest?:string,
+    status?:string
 }

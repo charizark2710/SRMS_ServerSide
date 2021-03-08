@@ -41,16 +41,16 @@ export default class Schedule {
             timeBuffer.forEach(val => {
                 const value = val.split('-');
                 if ((parseInt(value[1]) - 1000000).toString() === fullTime) {
-                    notification.sendMessage({ isRead: false, message: `Còn 1 tiếng là đến phòng ${value[3]} với lý do ${value[4]}`, receiver: value[0], sender: "admin", sendAt: fullText.concat('-', fullTime) });
+                    notification.sendMessage({ id: `admin_${fullText.concat('-', fullTime)}`, isRead: false, message: `Còn 1 tiếng là đến phòng ${value[3]} với lý do ${value[4]}`, receiver: value[0], sender: "admin", sendAt: fullText.concat('-', fullTime) });
                 }
                 else if ((parseInt(value[2]) - 1000000).toString() === fullTime) {
-                    notification.sendMessage({ isRead: false, message: `Còn 1 tiếng là hết giờ phòng ${value[3]} với lý do ${value[4]}`, receiver: value[0], sender: "admin", sendAt: fullText.concat('-', fullTime) });
+                    notification.sendMessage({ id: `admin_${fullText.concat('-', fullTime)}`, isRead: false, message: `Còn 1 tiếng là hết giờ phòng ${value[3]} với lý do ${value[4]}`, receiver: value[0], sender: "admin", sendAt: fullText.concat('-', fullTime) });
                 }
                 if (value[1] === fullTime) {
-                    notification.sendMessage({ isRead: false, message: `Đến giờ phòng ${value[3]} với lý do ${value[4]}`, receiver: value[0], sender: "admin", sendAt: fullText.concat('-', fullTime) });
+                    notification.sendMessage({ id: `admin_${fullText.concat('-', fullTime)}`, isRead: false, message: `Đến giờ phòng ${value[3]} với lý do ${value[4]}`, receiver: value[0], sender: "admin", sendAt: fullText.concat('-', fullTime) });
                 }
                 else if (value[2] === fullTime) {
-                    notification.sendMessage({ isRead: false, message: `Hết Giờ phòng ${value[3]} với lý do ${value[4]}`, receiver: value[0], sender: "admin", sendAt: fullText.concat('-', fullTime) });
+                    notification.sendMessage({ id: `admin_${fullText.concat('-', fullTime)}`, isRead: false, message: `Hết Giờ phòng ${value[3]} với lý do ${value[4]}`, receiver: value[0], sender: "admin", sendAt: fullText.concat('-', fullTime) });
                     calendarSchema.child('dynamic').child(fullText.concat('-', value[1], '-', value[2], '-', value[3])).remove();
                 }
             });
