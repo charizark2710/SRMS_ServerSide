@@ -66,7 +66,7 @@ export class UserController {
             const data = await user.val();
             // const user = await userSchema.doc(uid).get();
             // const data = user.data();
-            if (user.exists && data?.banned) {
+            if (user.exists() && data?.banned) {
                 // await userSchema.doc(uid).update({
                 //     banned: false,
                 //     bannedAt: null
