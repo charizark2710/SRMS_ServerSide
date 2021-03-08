@@ -7,8 +7,38 @@ import { mediaServer } from './media-server/media'
 import * as posenet from '@tensorflow-models/posenet'
 import { db } from './connector/configFireBase'
 import notification from './controller/NotificationManagement'
+import Schedule from './schedule/schedule'
+import * as io from 'socket.io'
 
 const app = express();
+
+const socketServer: io.Server = new io.Server({
+    cors: { credentials: true, allowedHeaders: "X-Requested-With,content-type", origin: 'http://localhost:3000' },
+});
+
+socketServer.listen(9001);
+
+let media: mediaServer;
+posenet.load({
+    architecture: "MobileNetV1",
+    outputStride: 16,
+    multiplier: 0.75,
+    quantBytes: 2,
+    inputResolution: { width: 640, height: 480 }
+}).then(value => media = new mediaServer(value));
+
+socketServer.on('connection', (socket: io.Socket) => {
+    console.log((new Date()) + ' Connection accepted ' + socket.client);
+    while (!media) {
+        console.log('wait to finish');
+    }
+    socket.emit('sendNoti', 'done');
+    media.dectectMedia(socket);
+    socket.on('disconnect', function (reason) {
+        console.log((new Date()) + ' disconnect ' + reason);
+    });
+});
+
 app.use(cookieParser());
 
 app.use(bodyParser.json());
@@ -17,6 +47,7 @@ app.set('view engine', 'html');
 app.use((req, res, next) => {
 
     // Website you wish to allow to connect
+    // res.setHeader('Access-Control-Allow-Origin', 'https://booming-pride-283013.web.app');
     res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
 
     // Request methods you wish to allow
@@ -33,18 +64,7 @@ app.use((req, res, next) => {
     next();
 });
 
-
-// let media: mediaServer;
-// posenet.load({
-//     architecture: "MobileNetV1",
-//     outputStride: 16,
-//     multiplier: 0.75,
-//     quantBytes: 2,
-//     inputResolution: { width: 640, height: 480 }
-// }).then(async net => {
-//     media = new mediaServer(net);
-//     media.dectectMedia();
-// });
+const s: Schedule = new Schedule();
 
 notification.receiveMessage();
 
@@ -74,4 +94,5 @@ process.on('exit', function (code) {
     console.log("Exit");
 });
 
+app.listen(5000);
 exports.app = functions.https.onRequest(app);
