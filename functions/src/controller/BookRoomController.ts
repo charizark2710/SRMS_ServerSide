@@ -1,9 +1,5 @@
-import { userSchema } from '../model/UserModel'
 import * as express from 'express';
-import { db, adminAuth } from "../connector/configFireBase"
-import bycrypt from 'bcryptjs'
-import auth from './Authenticate';
-import authorized from './Authorized';
+import { db } from "../connector/configFireBase"
 import notification from './NotificationManagement'
 
 export class BookRoomController {

@@ -1,6 +1,7 @@
 import * as express from 'express';
 import * as tf from '@tensorflow/tfjs-node';
 import * as posenet from '@tensorflow-models/posenet'
+import fs from 'fs'
 
 export class testPose {
 
@@ -18,7 +19,9 @@ export class testPose {
             $this.net.estimateSinglePose(input, {
                 flipHorizontal: true,
             }).then(pose => {
-                console.log(pose);
+                fs.open('./output.txt', 'a', null, (e, fd) => {
+                    fs.write(fd, JSON.stringify(pose) + '\r\n', function(){});
+                });
             });
         } catch (error) {
             console.log(error);

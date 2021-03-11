@@ -4,6 +4,7 @@ import { Image, createCanvas } from 'canvas'
 import { testPose } from '../TensorFlow/testPose'
 import * as posenet from '@tensorflow-models/posenet'
 import * as io from 'socket.io'
+
 export class mediaServer {
     spawn = child_process.spawn;
     pose: testPose;
