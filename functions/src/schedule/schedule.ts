@@ -2,21 +2,22 @@ import { dateBuffer, timeBuffer, getBuffer, deleteBuffer, defineDay, fullDay, cl
 import notification from '../controller/NotificationManagement'
 import { calendarSchema } from '../model/Calendar'
 
-export default class Schedule {
+let t: any = undefined;
 
+export default class Schedule {
+    id: number = 0;
     constructor() {
         this.setSchedule();
     }
 
     async setSchedule() {
-        await defineDay();
+        !fullDay.currentDay ? await defineDay() : '';
         const fullDate = fullDay.currentDay;
         console.log(fullDay);
         const fullText = fullDate.year.concat(fullDate.month, fullDate.date);
         getBuffer(fullText);
         deleteBuffer();
-        console.log(dateBuffer, '-', timeBuffer);
-        setInterval(this.timer, 1500, fullText);
+        t = setInterval(this.timer, 1000, fullText);
     }
 
     timer(fullText: string) {
@@ -27,9 +28,9 @@ export default class Schedule {
         const month = tempM.length === 2 ? tempM : '0' + tempM;
         const date = tempD.length === 2 ? tempD : '0' + tempD;
         if (!year.concat(month, date).match(fullText)) {
-            fullDay.currentDay = { year: year, month: month, date: date };
-            clearBuffer();
-            getBuffer(year.concat(month, date));
+            clearInterval(t);
+            clearBuffer(year, month, date);
+            new Schedule();
         } else {
             const tempH = time.getHours().toString();
             const tempMin = time.getMinutes().toString();
@@ -51,7 +52,7 @@ export default class Schedule {
                 }
                 else if (value[2] === fullTime) {
                     notification.sendMessage({ id: `admin_${fullText.concat('-', fullTime)}`, isRead: false, message: `Hết Giờ phòng ${value[3]} với lý do ${value[4]}`, receiver: value[0], sender: "admin", sendAt: fullText.concat('-', fullTime) });
-                    calendarSchema.child('dynamic').child(fullText.concat('-', value[1], '-', value[2], '-', value[3])).remove();
+                    calendarSchema.child(fullText.concat('-', value[1], '-', value[2], '-', value[3])).remove();
                 }
             });
         }

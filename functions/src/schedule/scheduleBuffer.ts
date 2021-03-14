@@ -17,13 +17,13 @@ async function defineDay() {
             }
         },
         set: function (val) {
-            this.currentDay = val;
-        }
+            this._currentDay = val;
+        },
     });
 }
 
 function getBuffer(fullText: string) {
-    calendarSchema.child('dynamic').on('child_added', snap => {
+    calendarSchema.on('child_added', snap => {
         const value = snap.val();
         const date = value.date;
         const time = (value.from as string).concat('-', value.to);
@@ -32,7 +32,7 @@ function getBuffer(fullText: string) {
             timeBuffer.push(value.userId + "-" + time + '-' + value.room + '-' + value.reason);
         }
     });
-    calendarSchema.child('dynamic').off('child_added', snap => {
+    calendarSchema.off('child_added', snap => {
         const value = snap.val();
         const date = value.date;
         const time = (value.from as string).concat('-', value.to);
@@ -41,31 +41,31 @@ function getBuffer(fullText: string) {
             timeBuffer.push(value.userId + "-" + time + '-' + value.room + '-' + value.reason);
         }
     });
-
     // thay đổi là xóa đi thêm lại nên không cần child_changed
 }
 
 function deleteBuffer() {
-    calendarSchema.child('dynamic').on('child_removed', snap => {
-        const value = (snap.val().date as string).split('-');
-        const date = value[0];
+    calendarSchema.on('child_removed', snap => {
+        const value = (snap.key as string).split('-');
+        // const date = value[0];
         const time = value[1];
-        dateBuffer.filter(item => (item !== date));
+        // dateBuffer.filter(item => (item !== date));
         timeBuffer.filter(item => (item !== time));
     });
-    calendarSchema.child('dynamic').off('child_removed', snap => {
-        const value = (snap.val().date as string).split('-');
-        const date = value[0];
+    calendarSchema.off('child_removed', snap => {
+        const value = (snap.key as string).split('-');
+        // const date = value[0];
         const time = value[1];
-        dateBuffer.filter(item => (item !== date));
+        // dateBuffer.filter(item => (item !== date));
         timeBuffer.filter(item => (item !== time));
     });
 }
 
-function clearBuffer() {
+function clearBuffer(year: string, month: string, date: string) {
     dateBuffer = [];
     timeBuffer = [];
-    calendarSchema.child('dynamic').off('child_added');
+    fullDay.currentDay = { year: year, month: month, date: date };
+    calendarSchema.off();
 }
 
 export { dateBuffer, timeBuffer, getBuffer, deleteBuffer, defineDay, fullDay, clearBuffer };

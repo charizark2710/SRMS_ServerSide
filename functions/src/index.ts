@@ -72,10 +72,6 @@ const routes = new Route(app);
 routes.routers();
 
 process.on('SIGHUP', function () {
-    db.ref('video').set({
-        isDone: true,
-        frame: ""
-    });
     db.goOffline();
     process.exit();
 });

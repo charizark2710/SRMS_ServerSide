@@ -12,6 +12,8 @@ export default class CalendarController {
     init() {
         this.router.get(this.url + '/view', auth, this.viewCalendar);
         this.router.post(this.url + '/add', auth, this.addSchedule);
+        this.router.get(this.url + '/:id', auth, this.getSchedules);
+        this.router.put(this.url + '/:id', auth, this.editSchedule);
     }
 
     viewCalendar = async (request: express.Request, response: express.Response) => {
@@ -27,15 +29,7 @@ export default class CalendarController {
                 if (selectedRooms) {
                     const rooms = selectedRooms.toString().split(',');
                     for (const date of dates) {
-                        (await calendarSchema.child('dynamic').orderByKey().startAt(date + " ").endAt(date + "~").get()).forEach(snap => {
-                            const val = snap.val();
-                            for (const room of rooms) {
-                                if (userId === val.userId && room === val.room) {
-                                    result.push(val);
-                                }
-                            }
-                        });
-                        (await calendarSchema.child('static').orderByKey().startAt(date + " ").endAt(date + "~").get()).forEach(snap => {
+                        (await calendarSchema.orderByKey().startAt(date + " ").endAt(date + "~").get()).forEach(snap => {
                             const val = snap.val();
                             for (const room of rooms) {
                                 if (userId === val.userId && room === val.room) {
@@ -46,13 +40,7 @@ export default class CalendarController {
                     }
                 } else {
                     for (const date of dates) {
-                        (await calendarSchema.child('dynamic').orderByKey().startAt(date + " ").endAt(date + "~").get()).forEach(snap => {
-                            const val = snap.val();
-                            if (userId === val.userId) {
-                                result.push(val);
-                            }
-                        });
-                        (await calendarSchema.child('static').orderByKey().startAt(date + " ").endAt(date + "~").get()).forEach(snap => {
+                        (await calendarSchema.orderByKey().startAt(date + " ").endAt(date + "~").get()).forEach(snap => {
                             const val = snap.val();
                             if (userId === val.userId) {
                                 result.push(val);
@@ -66,15 +54,7 @@ export default class CalendarController {
                 if (selectedRooms) {
                     const rooms = selectedRooms.toString().split(',');
                     for (const date of dates) {
-                        (await calendarSchema.child('dynamic').orderByKey().startAt(date + " ").endAt(date + "~").get()).forEach(snap => {
-                            const val = snap.val();
-                            for (const room of rooms) {
-                                if (room === val.room) {
-                                    result.push(val);
-                                }
-                            }
-                        });
-                        (await calendarSchema.child('static').orderByKey().startAt(date + " ").endAt(date + "~").get()).forEach(snap => {
+                        (await calendarSchema.orderByKey().startAt(date + " ").endAt(date + "~").get()).forEach(snap => {
                             const val = snap.val();
                             for (const room of rooms) {
                                 if (room === val.room) {
@@ -85,11 +65,7 @@ export default class CalendarController {
                     }
                 } else {
                     for (const date of dates) {
-                        (await calendarSchema.child('dynamic').orderByKey().startAt(date + " ").endAt(date + "~").get()).forEach(snap => {
-                            const val = snap.val();
-                            result.push(val);
-                        });
-                        (await calendarSchema.child('static').orderByKey().startAt(date + " ").endAt(date + "~").get()).forEach(snap => {
+                        (await calendarSchema.orderByKey().startAt(date + " ").endAt(date + "~").get()).forEach(snap => {
                             const val = snap.val();
                             result.push(val);
                         });
@@ -102,24 +78,14 @@ export default class CalendarController {
                 if (selectedRooms) {
                     const rooms = selectedRooms.toString().split(',');
                     rooms.forEach(async room => {
-                        (await calendarSchema.child('dynamic').get()).forEach(snap => {
-                            if (snap.val().userId === userId && snap.val().room === room) {
-                                result.push(snap.val());
-                            }
-                        });
-                        (await calendarSchema.child('static').get()).forEach(snap => {
+                        (await calendarSchema.get()).forEach(snap => {
                             if (snap.val().userId === userId && snap.val().room === room) {
                                 result.push(snap.val());
                             }
                         });
                     });
                 } else {
-                    (await calendarSchema.child('dynamic').get()).forEach(snap => {
-                        if (snap.val().userId === userId) {
-                            result.push(snap.val());
-                        }
-                    });
-                    (await calendarSchema.child('static').get()).forEach(snap => {
+                    (await calendarSchema.get()).forEach(snap => {
                         if (snap.val().userId === userId) {
                             result.push(snap.val());
                         }
@@ -129,12 +95,7 @@ export default class CalendarController {
                 if (selectedRooms) {
                     const rooms = selectedRooms.toString().split(',');
                     rooms.forEach(async room => {
-                        (await calendarSchema.child('dynamic').get()).forEach(snap => {
-                            if (snap.val().room === room) {
-                                result.push(snap.val());
-                            }
-                        });
-                        (await calendarSchema.child('static').get()).forEach(snap => {
+                        (await calendarSchema.get()).forEach(snap => {
                             if (snap.val().room === room) {
                                 result.push(snap.val());
                             }
@@ -155,7 +116,7 @@ export default class CalendarController {
             const reqFrom = parseInt(data.from);
             const reqTo = parseInt(data.to);
             let isOcc: boolean = false;
-            isOcc = (await calendarSchema.child('dynamic').orderByKey().startAt(data.date + " ").endAt(data.date + "~").get()).forEach(snap => {
+            isOcc = (await calendarSchema.orderByKey().startAt(data.date + " ").endAt(data.date + "~").get()).forEach(snap => {
                 const value = snap.val();
                 const from = parseInt(value.from);
                 const to = parseInt(value.to);
@@ -170,7 +131,7 @@ export default class CalendarController {
                 }
             });
             if (!isOcc) {
-                calendarSchema.child("dynamic").child(data.date.concat('-', data.from, '-', data.to, '-', data.room)).set(data);
+                calendarSchema.child(data.date.concat('-', data.from, '-', data.to, '-', data.room)).set(data);
                 response.status(200).send('ok');
             } else {
                 response.status(400).send('Lich kin roi');
@@ -182,8 +143,10 @@ export default class CalendarController {
 
     editSchedule = async (request: express.Request, response: express.Response) => {
         try {
+            const id = request.params.id;
             const data: DynamicCalendar = request.body;
-            calendarSchema.child("dynamic").set(data);
+            calendarSchema.child(id).remove();
+            calendarSchema.child(id).set(data);
             response.status(200).send('ok');
         } catch (error) {
             response.status(500).send(error);
@@ -192,15 +155,9 @@ export default class CalendarController {
 
     getSchedules = async (request: express.Request, response: express.Response) => {
         try {
-            const type = request.query.type;
-            if (type?.toString().toLowerCase() === 'dynamic') {
-                console.log("tinh sau");
-            } else if (type?.toString().toLowerCase() === 'static') {
-                console.log("tinh sau");
-            } else {
-                response.status(404).send("Khong tim thay");
-            }
-            // const user = await userSchema.doc(uid).get();
+            const id = request.params.id;
+            const result = (await calendarSchema.child(id).get()).val();
+            response.status(200).json(result);            
         } catch (error) {
             response.status(500).send(error);
         }
