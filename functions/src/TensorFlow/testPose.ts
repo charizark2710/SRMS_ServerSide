@@ -20,7 +20,7 @@ export class testPose {
                 flipHorizontal: true,
             }).then(pose => {
                 fs.open('./output.txt', 'a', null, (e, fd) => {
-                    fs.write(fd, JSON.stringify(pose) + '\r\n', function(){});
+                    fs.write(fd, JSON.stringify(pose) + '\r\n', function(){console.log('')});
                 });
             });
         } catch (error) {

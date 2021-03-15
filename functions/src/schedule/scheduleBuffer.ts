@@ -1,8 +1,8 @@
 import { Calendar, StaticCalendar, DynamicCalendar, calendarSchema } from '../model/Calendar'
 
-var dateBuffer: string[] = [];
-var timeBuffer: string[] = [];
-var fullDay: any = {};
+let dateBuffer: string[] = [];
+let timeBuffer: string[] = [];
+const fullDay: any = {};
 
 async function defineDay() {
     Object.defineProperty(fullDay, 'currentDay', {

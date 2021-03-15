@@ -13,8 +13,10 @@ import * as io from 'socket.io'
 const app = express();
 
 const socketServer: io.Server = new io.Server({
-    cors: { credentials: true, allowedHeaders: "X-Requested-With,content-type", origin: 'http://localhost:3000' },
+    cors: { credentials: true, allowedHeaders: "X-Requested-With,content-type", origin: 'https://learning-5071c.web.app' },
 });
+
+console.log(functions.config());
 
 socketServer.listen(9001);
 
@@ -47,8 +49,8 @@ app.set('view engine', 'html');
 app.use((req, res, next) => {
 
     // Website you wish to allow to connect
-    // res.setHeader('Access-Control-Allow-Origin', 'https://booming-pride-283013.web.app');
-    res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+    res.setHeader('Access-Control-Allow-Origin', 'https://learning-5071c.web.app');
+    // res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
 
     // Request methods you wish to allow
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');

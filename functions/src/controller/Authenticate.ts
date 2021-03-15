@@ -17,7 +17,7 @@ export default async function auth(req: express.Request, res: express.Response, 
             const token = split[1];
             try {
 
-                jwt.verify(token, functions.config().other.secretOrPublicKey as string, (err, decoded: any) => {
+                jwt.verify(token, functions.config().other.secret_or_publickey as string, (err, decoded: any) => {
                     res.locals = { ...res.locals, uid: decoded?.uid, role: decoded?.role, email: decoded?.email, employeeId: decoded?.employeeId };
                 });
                 next();

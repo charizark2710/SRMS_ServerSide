@@ -45,10 +45,12 @@ export class Login {
                     });
                 }
                 const role = (await adminAuth.getUser(data.uid)).customClaims?.role;
-                const token = 'Bearer ' + jwt.sign({ uid: data.uid, employeeId: data.employeeId, role: role, email: email }, functions.config().other.secretOrPublicKey as string);
+                const token = 'Bearer ' + jwt.sign({ uid: data.uid, employeeId: data.employeeId, role: role, email: email }, functions.config().other.secret_or_publickey as string);
                 response.setHeader('Set-Cookie', cookie.serialize('token', token, {
                     httpOnly: true,
                     maxAge: 60 * 60,
+                    sameSite: 'none',
+                    secure: true
                 }));
                 return response.json('ok');
             } else if(eType === 'fe.edu.vn'){
@@ -61,10 +63,12 @@ export class Login {
                     bannedAt: null
                 });
                 const role = (await adminAuth.getUser(data.uid)).customClaims?.role;
-                const token = 'Bearer ' + jwt.sign({ uid: data.uid, employeeId: data.employeeId, role: role, email: data.email }, functions.config().other.secretOrPublicKey as string);
+                const token = 'Bearer ' + jwt.sign({ uid: data.uid, employeeId: data.employeeId, role: role, email: data.email }, functions.config().other.secret_or_publickey as string);
                 response.setHeader('Set-Cookie', cookie.serialize('token', token, {
                     httpOnly: true,
                     maxAge: 60 * 60,
+                    sameSite: 'none',
+                    secure: true
                 }));
                 return response.json('ok');
             } else {

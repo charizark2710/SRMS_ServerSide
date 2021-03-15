@@ -71,8 +71,8 @@ export class BookRoomController {
 
     viewDetailBookingRoom = async (request: express.Request, response: express.Response) => {
         try {
-            var result = {};
-            var id = request.params.id;
+            let result = {};
+            const id = request.params.id;
             db.ref('notification').child('thanhntse63563').child(id.toString()).update({
                 isRead: true
             });
@@ -94,7 +94,7 @@ export class BookRoomController {
 
     acceptOrRejectBooking = async (request: express.Request, response: express.Response) => {
         try {
-            var data = request.body;//id + status + roomName+date+time
+            const data = request.body;//id + status + roomName+date+time
             await db.ref('Booking').child(data.id).update({
                 status: data.status,
             }, (error) => {
@@ -128,10 +128,10 @@ export class BookRoomController {
     //arr5: return arr4-arr3 
     getEmptyRooms = async (request: express.Request, response: express.Response) => {
         try {
-            var data = request.body;
+            const data = request.body;
 
-            var lectureSchedules = ['201', '202']; //example
-            var bookingSchedules = await db.ref('Booking').child(data.date).once('value')
+            const lectureSchedules = ['201', '202']; //example
+            const bookingSchedules = await db.ref('Booking').child(data.date).once('value')
                 .then(function (snapshot) {
                     //return snapshot.getKey();
                 })
@@ -155,8 +155,8 @@ export class BookRoomController {
 
     cancelBookingRoom = async (request: express.Request, response: express.Response) => {
         try {
-            var bookingId = request.params.id;
-            var userId = bookingId?.split('_')[0] || ' ';
+            const bookingId = request.params.id;
+            const userId = bookingId?.split('_')[0] || ' ';
             //xóa trong booking, xóa hết noti
             await db.ref('Booking').child(bookingId).remove()
                 .then(function () {
@@ -176,8 +176,8 @@ export class BookRoomController {
 
     getBookingById = async (request: express.Request, response: express.Response) => {
         try {
-            var result;
-            var id = request.params.id;
+            let result;
+            const id = request.params.id;
             //xóa trong booking, xóa hết noti
             await db.ref('Booking').child(id).get().then(function (snapshot) {
                 if (snapshot.exists()) {
@@ -197,7 +197,7 @@ export class BookRoomController {
 
     updateBooking = async (request: express.Request, response: express.Response) => {
         try {
-            var data = request.body;
+            const data = request.body;
             await db.ref('Booking').child(data.id).set({
                 date: data.date,
                 roomName: data.roomName,

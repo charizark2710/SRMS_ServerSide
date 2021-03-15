@@ -28,7 +28,7 @@ export class RoomController {
     //dựa vào room và type device, update trạng thái
     switchDeviceStatus = async (request: express.Request, response: express.Response) => {
         try {
-            var data = request.body;
+            const data = request.body;
             await roomSchema.child(data.roomName).update(data.device);
             return response.send("ok");
         } catch (error) {
@@ -38,7 +38,7 @@ export class RoomController {
 
     switchAllDevicesStatus = async (request: express.Request, response: express.Response) => {
         try {
-            var data = request.body;
+            const data = request.body;
             await roomSchema.child(data.roomName).update(data.devices);
             return response.send("ok");
         } catch (error) {
@@ -48,8 +48,8 @@ export class RoomController {
 
     //load devices'status at roomName
     sendDevicesStatus = async (request: express.Request, response: express.Response) => {
-        var data = request.body;
-        var devicesData = await roomSchema.child(data.roomName).once('value')
+        const data = request.body;
+        const devicesData = await roomSchema.child(data.roomName).once('value')
             .then(function (snapshot) {
                 return snapshot.val()
             })
