@@ -18,6 +18,25 @@ class notificationManagement {
         db.ref('notification').child(onload.receiver).child(onload.id.toString()).set(onload);
     }
 
+    updateIsRead=(id:string)=>{
+        db.ref('notification').child('thanhntse63563').child(id.toString()).update({
+            isRead: true
+        });
+    }
+
+    updateAdminApprovalStatus=(id:string, status:string, userId:string, sendAt:string)=>{
+        db.ref('notification').child(userId).child(id.toString()).update({
+            id: id,
+            status: status,
+            sendAt:sendAt
+        });
+        db.ref('notification').child('thanhntse63563').child(id.toString()).update({
+            id: id,
+            status: status,
+            sendAt:sendAt
+        });
+    }
+    
 
 }
 

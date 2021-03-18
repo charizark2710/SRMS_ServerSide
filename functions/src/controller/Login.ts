@@ -1,6 +1,6 @@
 import * as express from 'express';
 import { userSchema } from "../model/UserModel";
-import { adminAuth } from "../connector/configFireBase"
+import { adminAuth, db } from "../connector/configFireBase"
 import cookie from "cookie"
 import jwt from "jsonwebtoken";
 import { UserController } from './UserController'
@@ -19,15 +19,10 @@ export class Login {
     }
 
     login = async (request: express.Request, response: express.Response) => {
-     
         try {
             const data = request.body;
             const decodedToken = await adminAuth.verifyIdToken(data.idToken);
             const email = decodedToken.email;
-            // const query = await userSchema.where('deleted', '==', false).where('email', '==', email).get();
-            const user = await adminAuth.getUser(decodedToken.uid);
-            const query = (await userSchema.child(data.employeeId + "/email").get()).val();
-            console.log(query);
             let result;
             const eType = email?.split('@')[1];
             if (eType === 'fpt.edu.vn') {
@@ -40,7 +35,26 @@ export class Login {
                         banned: false,
                         uid: data.uid!,
                         bannedAt: null
+                    }, (error) => {
+                        if (error) {
+                            response.status(500).send(error);
+                        } else {
+                            //nếu user chưa tồn tại trong banned list =>  insert
+                             db.ref('BannedUser').child(data.employeeId).get().then(function(snapshot) {
+                                if (!snapshot.exists()) {
+                                    db.ref('BannedUser').child(data.employeeId).set({
+                                        email: email!,
+                                        isBanned: false,
+                                        role: "student"
+                                    })
+                                }
+                                
+                              }).catch(function(error) {
+                                console.error(error);
+                              });
+                        }
                     });
+
                 } else {
                     await adminAuth.setCustomUserClaims(data.uid, { role: 'lecture' });
                     result = userSchema.child(data.employeeId).set({
@@ -49,7 +63,26 @@ export class Login {
                         uid: data.uid!,
                         banned: false,
                         bannedAt: null
+                    }, (error) => {
+                        if (error) {
+                            response.status(500).send(error);
+                        } else {
+                            //nếu user chưa tồn tại trong banned list =>  insert
+                            db.ref('BannedUser').child(data.employeeId).get().then(function(snapshot) {
+                                if (!snapshot.exists()) {
+                                    db.ref('BannedUser').child(data.employeeId).set({
+                                        email: email!,
+                                        isBanned: false,
+                                        role: "student"
+                                    })
+                                }
+                                
+                              }).catch(function(error) {
+                                console.error(error);
+                              });
+                        }
                     });
+
                 }
                 const role = (await adminAuth.getUser(data.uid)).customClaims?.role;
                 const token = 'Bearer ' + jwt.sign({ uid: data.uid, employeeId: data.employeeId, role: role, email: email }, functions.config().other.secretOrPublicKey as string);
@@ -58,7 +91,7 @@ export class Login {
                     maxAge: 60 * 60,
                 }));
                 return response.json('ok');
-            } else {
+            } else if (eType === 'fe.edu.vn') {
                 await adminAuth.setCustomUserClaims(data.uid, { role: 'admin' });
                 result = userSchema.child(data.employeeId).set({
                     email: email!,
@@ -74,6 +107,8 @@ export class Login {
                     maxAge: 60 * 60,
                 }));
                 return response.json('ok');
+            } else {
+                return response.status(400).json({ error: "Sai Email" });
             }
 
         } catch (e) {

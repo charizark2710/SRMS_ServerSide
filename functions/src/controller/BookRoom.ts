@@ -52,7 +52,7 @@ export class BookRoom {
                             isRead: false,
                             typeRequest: 'bookRoomRequest',//có 3 loại, dựa vào typeRequest để truy cập đúng bảng
                             id: id,
-                            status: data.status
+                            status: data.status,
                         });
                         //gửi cho chính user đặt phòng
                         notification.sendMessage({
@@ -63,7 +63,8 @@ export class BookRoom {
                             isRead: false,
                             typeRequest: 'bookRoomRequest',//có 3 loại, dựa vào typeRequest để truy cập đúng bảng
                             id: id,
-                            status: data.status
+                            status: data.status,
+                            
                         });
                     }
                 });
@@ -77,9 +78,7 @@ export class BookRoom {
         try {
             var result = {};
             var id = request.params.id;
-            db.ref('notification').child('thanhntse63563').child(id.toString()).update({
-                isRead: true
-            });
+            notification.updateIsRead(id);
             await db.ref('Booking').child(id).get().then(function (snapshot) {
                 if (snapshot.exists()) {
                     result = snapshot.val();
@@ -96,9 +95,11 @@ export class BookRoom {
         }
     }
 
+
+    //update trong booking noti user noti admin
     acceptOrRejectBooking = async (request: express.Request, response: express.Response) => {
         try {
-            var data = request.body;//id + status + roomName+date+time
+            var data = request.body;//id + status
             await db.ref('Booking').child(data.id).update({
                 status: data.status,
             }, (error) => {
@@ -106,16 +107,7 @@ export class BookRoom {
                     response.status(500).send(error);
                 } else {
                     //send noti to user
-                    notification.sendMessage({
-                        message: 'Your requset to book room ' + data.roomName + ' at ' + data.date + ' ' + data.time,
-                        receiver: data.id?.split('_')[0] || ' ',
-                        sender: 'thanhntse63563', //fake account admin
-                        sendAt: (new Date()).toString(),
-                        isRead: false,
-                        typeRequest: 'bookRoomRequest',//có 3 loại, dựa vào typeRequest để truy cập đúng bảng
-                        id: data.id,
-                        status: data.status
-                    });
+                    notification.updateAdminApprovalStatus(data.id, data.status, data.id?.split('_')[0] || ' ',(new Date()).toString());
                 }
             });
             return response.status(200).json('ok');
@@ -182,7 +174,6 @@ export class BookRoom {
         try {
             var result;
             var id = request.params.id;
-            //xóa trong booking, xóa hết noti
             await db.ref('Booking').child(id).get().then(function (snapshot) {
                 if (snapshot.exists()) {
                     result = snapshot.val();
@@ -224,7 +215,8 @@ export class BookRoom {
                         isRead: false,
                         typeRequest: 'bookRoomRequest',//có 3 loại, dựa vào typeRequest để truy cập đúng bảng
                         id: data.id,
-                        status: data.status
+                        status: data.status,
+
                     });
                     //gửi cho admin
                     notification.sendMessage({
@@ -235,7 +227,8 @@ export class BookRoom {
                         isRead: false,
                         typeRequest: 'bookRoomRequest',//có 3 loại, dựa vào typeRequest để truy cập đúng bảng
                         id: data.id,
-                        status: data.status
+                        status: data.status,
+
                     });
                 }
             });
