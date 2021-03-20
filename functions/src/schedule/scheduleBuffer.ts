@@ -1,4 +1,4 @@
-import { Calendar, StaticCalendar, DynamicCalendar, calendarSchema } from '../model/Calendar'
+import { Calendar, calendarSchema } from '../model/Calendar'
 
 let dateBuffer: string[] = [];
 let timeBuffer: string[] = [];
@@ -24,7 +24,7 @@ async function defineDay() {
 
 function getBuffer(fullText: string) {
     calendarSchema.on('child_added', snap => {
-        const value = snap.val();
+        const value: Calendar = snap.val();
         const date = value.date;
         const time = (value.from as string).concat('-', value.to);
         if (date === fullText) {
@@ -33,7 +33,7 @@ function getBuffer(fullText: string) {
         }
     });
     calendarSchema.off('child_added', snap => {
-        const value = snap.val();
+        const value: Calendar = snap.val();
         const date = value.date;
         const time = (value.from as string).concat('-', value.to);
         if (date === fullText) {

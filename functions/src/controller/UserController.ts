@@ -1,7 +1,6 @@
 import { userSchema } from '../model/UserModel'
 import * as express from 'express';
 import { adminAuth } from "../connector/configFireBase"
-import bycrypt from 'bcryptjs'
 import auth from './Authenticate';
 import authorized from './Authorized';
 import notification from './NotificationManagement'
@@ -14,30 +13,12 @@ export class UserController {
     }
 
     init() {
-        this.router.patch(this.path + "/edit/:id", auth, authorized({ hasRole: ['admin'] }), this.editUser);
-        this.router.delete(this.path + "/delete/:id", auth, authorized({ hasRole: ['admin'] }), this.deleteUser);
+        this.router.delete(this.path + "/ban/:id", auth, authorized({ hasRole: ['admin'] }), this.banUser);
         this.router.patch(this.path + "/banned/:id/restore", auth, authorized({ hasRole: ['admin', 'student', 'lecture'] }), this.restoreUser);
         this.router.get(this.path + '/:id', auth, authorized({ hasRole: ['admin', 'student', 'lecture'] }), this.getUser);
     }
 
-    editUser = async (request: express.Request, response: express.Response) => {
-        try {
-            const data = request.body;
-            const salt = await bycrypt.genSalt(10);
-            const password = await bycrypt.hash(data.password, salt);
-            const user = await adminAuth.updateUser(request.params.id, {
-                password: password
-            });
-            // await userSchema.doc(request.params.id).update({
-            //     password: password,
-            // });
-            return response.send(user);
-        } catch (error) {
-            response.status(500).send(error);
-        }
-    }
-
-    deleteUser = async (request: express.Request, response: express.Response) => {
+    banUser = async (request: express.Request, response: express.Response) => {
         try {
             const uid = request.params.id;
             const user = await adminAuth.deleteUser(uid);

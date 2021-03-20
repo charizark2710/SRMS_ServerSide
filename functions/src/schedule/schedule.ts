@@ -1,11 +1,12 @@
 import { dateBuffer, timeBuffer, getBuffer, deleteBuffer, defineDay, fullDay, clearBuffer } from './scheduleBuffer'
 import notification from '../controller/NotificationManagement'
 import { calendarSchema } from '../model/Calendar'
+import {adminAuth} from '../connector/configFireBase'
+import {userSchema, User} from '../model/UserModel'
 
 let t: any = undefined;
 
 export default class Schedule {
-    id: number = 0;
     constructor() {
         this.setSchedule();
     }
@@ -39,10 +40,12 @@ export default class Schedule {
             const min = tempMin.length === 2 ? tempMin : '0' + tempMin;
             const sec = tempSec.length === 2 ? tempSec : '0' + tempSec;
             const fullTime = hours.concat(min, sec);
-            timeBuffer.forEach(val => {
+            timeBuffer.forEach(async val => {
                 const value = val.split('-');
                 if ((parseInt(value[1]) - 1000000).toString() === fullTime) {
                     notification.sendMessage({ id: `admin_${fullText.concat('-', fullTime)}`, isRead: false, message: `Còn 1 tiếng là đến phòng ${value[3]} với lý do ${value[4]}`, receiver: value[0], sender: "admin", sendAt: fullText.concat('-', fullTime) });
+                    const userInfo: User = (await userSchema.child(value[0]).get()).val();
+                    adminAuth.setCustomUserClaims(userInfo.uid, { room: value[3] });
                 }
                 else if ((parseInt(value[2]) - 1000000).toString() === fullTime) {
                     notification.sendMessage({ id: `admin_${fullText.concat('-', fullTime)}`, isRead: false, message: `Còn 1 tiếng là hết giờ phòng ${value[3]} với lý do ${value[4]}`, receiver: value[0], sender: "admin", sendAt: fullText.concat('-', fullTime) });
@@ -51,8 +54,11 @@ export default class Schedule {
                     notification.sendMessage({ id: `admin_${fullText.concat('-', fullTime)}`, isRead: false, message: `Đến giờ phòng ${value[3]} với lý do ${value[4]}`, receiver: value[0], sender: "admin", sendAt: fullText.concat('-', fullTime) });
                 }
                 else if (value[2] === fullTime) {
+                    const userInfo: User = (await userSchema.child(value[0]).get()).val();
                     notification.sendMessage({ id: `admin_${fullText.concat('-', fullTime)}`, isRead: false, message: `Hết Giờ phòng ${value[3]} với lý do ${value[4]}`, receiver: value[0], sender: "admin", sendAt: fullText.concat('-', fullTime) });
-                    calendarSchema.child(fullText.concat('-', value[1], '-', value[2], '-', value[3])).remove();
+                    await calendarSchema.child(fullText.concat('-', value[1], '-', value[2], '-', value[3])).remove();
+                    adminAuth.setCustomUserClaims(userInfo.uid, { room: null });
+
                 }
             });
         }

@@ -1,4 +1,3 @@
-import { database } from "firebase-admin";
 import { db } from '../connector/configFireBase';
 interface Room {
     light: number,

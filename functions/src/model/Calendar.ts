@@ -5,19 +5,12 @@ interface Calendar {
     room: string,
     userId: string,
     userName: string,
-    reason: string
-}
-
-interface StaticCalendar extends Calendar {
-    slot: number
-}
-
-interface DynamicCalendar extends Calendar {
+    reason: string,
     from: string,
     to: string,
 }
 
 const calendarSchema = db.ref('calendar');
 
-export { Calendar, StaticCalendar, DynamicCalendar, calendarSchema }
+export { Calendar, calendarSchema }
 

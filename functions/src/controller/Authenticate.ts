@@ -16,7 +16,6 @@ export default async function auth(req: express.Request, res: express.Response, 
                 return res.status(401).send({ message: 'Unauthorized' });
             const token = split[1];
             try {
-
                 jwt.verify(token, functions.config().other.secret_or_publickey as string, (err, decoded: any) => {
                     res.locals = { ...res.locals, uid: decoded?.uid, role: decoded?.role, email: decoded?.email, employeeId: decoded?.employeeId };
                 });
@@ -29,5 +28,4 @@ export default async function auth(req: express.Request, res: express.Response, 
     } catch (error) {
         return res.status(500).send(error);
     }
-
 }

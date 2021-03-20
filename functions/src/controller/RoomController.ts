@@ -1,9 +1,6 @@
-import { userSchema } from '../model/UserModel'
 import * as express from 'express';
-import { db, adminAuth } from "../connector/configFireBase"
 import auth from './Authenticate';
-import authorized from './Authorized';
-import notification from './NotificationManagement'
+import authorized, { roomPermission } from './Authorized';
 import { roomSchema, Room } from '../model/Room'
 
 export class RoomController {
@@ -14,23 +11,26 @@ export class RoomController {
     }
 
     init() {
-        this.router.patch(this.path + "/switchDeviceStatus", this.switchDeviceStatus);
-        this.router.put(this.path + "/switchAllDevicesStatus", this.switchAllDevicesStatus);
-        this.router.post(this.path + "/sendDevicesStatus", this.sendDevicesStatus);
+        this.router.patch(this.path + "/switchDeviceStatus", auth, roomPermission(), this.switchDeviceStatus);
+        this.router.put(this.path + "/switchAllDevicesStatus", auth, roomPermission(), this.switchAllDevicesStatus);
+        this.router.post(this.path + "/sendDevicesStatus", auth, roomPermission(), this.sendDevicesStatus);
         // this.router.delete(this.path + "/delete/:id", auth, authorized({ hasRole: ['admin'] }), this.deleteRoom);
         // this.router.patch(this.path + "/banned/:id/restore", auth, authorized({ hasRole: ['admin', 'student', 'lecture'] }), this.restoreRoom);
-        this.router.get(this.path + "/countNumberTurnOnDevices", this.countNumberTurnOnDevices);
+        this.router.get(this.path + "/countNumberTurnOnDevices", auth, roomPermission(), this.countNumberTurnOnDevices);
     }
-
-
 
     //nhận về room, type và trạng thái device
     //dựa vào room và type device, update trạng thái
     switchDeviceStatus = async (request: express.Request, response: express.Response) => {
         try {
             const data = request.body;
-            await roomSchema.child(data.roomName).update(data.device);
-            return response.send("ok");
+            const room = response.locals.room;
+            if (data.roomName === room || response.locals.role === 'admin') {
+                await roomSchema.child(data.roomName).update(data.device);
+                return response.send("ok");
+            } else {
+                response.status(403).send(`may khong duoc dung phong ${data.roomName}`);
+            }
         } catch (error) {
             response.status(500).send(error);
         }
@@ -39,8 +39,13 @@ export class RoomController {
     switchAllDevicesStatus = async (request: express.Request, response: express.Response) => {
         try {
             const data = request.body;
-            await roomSchema.child(data.roomName).update(data.devices);
-            return response.send("ok");
+            const room = response.locals.room;
+            if (data.roomName === room || response.locals.role === 'admin') {
+                await roomSchema.child(data.roomName).update(data.devices);
+                return response.send("ok");
+            } else {
+                response.status(403).send(`may khong duoc dung phong ${data.roomName}`);
+            }
         } catch (error) {
             response.status(500).send(error);
         }
@@ -48,12 +53,21 @@ export class RoomController {
 
     //load devices'status at roomName
     sendDevicesStatus = async (request: express.Request, response: express.Response) => {
-        const data = request.body;
-        const devicesData = await roomSchema.child(data.roomName).once('value')
-            .then(function (snapshot) {
-                return snapshot.val()
-            })
-        response.status(200).send(devicesData);
+        try {
+            const data = request.body;
+            const room = response.locals.room;
+            if (data.roomName === room || response.locals.role === 'admin') {
+                const devicesData: Room = await roomSchema.child(data.roomName).once('value')
+                    .then(function (snapshot) {
+                        return snapshot.val();
+                    })
+                response.status(200).send(devicesData);
+            } else {
+                response.status(403).send(`may khong duoc dung phong ${data.roomName}`);
+            }
+        } catch (error) {
+            response.status(500).send(error);
+        }
     }
 
     //đếm số thiết bị đang bật/tổng số thiết bị
@@ -68,7 +82,6 @@ export class RoomController {
             onConditioner: 0,
             totalConditioner: 0,
         }
-
         try {
             (await roomSchema.get()).forEach(snapshot => {
                 const value: Room = snapshot.val();

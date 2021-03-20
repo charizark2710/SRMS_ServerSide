@@ -1,6 +1,7 @@
 import * as express from 'express';
 import { db } from "../connector/configFireBase"
 import notification from './NotificationManagement'
+import { adminAuth } from "../connector/configFireBase"
 
 export class BookRoomController {
     public router = express.Router();
@@ -12,10 +13,10 @@ export class BookRoomController {
     init() {
         this.router.post(this.path, this.createBookingRoom);
         this.router.delete(this.path + "/delete/:id", this.cancelBookingRoom);
-        this.router.patch(this.path + "/acceptOrRejectBooking", this.acceptOrRejectBooking);
-        this.router.put(this.path + "/updating", this.updateBooking);
+        this.router.patch(this.path + "/acceptOrRejectBooking/:id", this.acceptOrRejectBooking);
+        this.router.put(this.path + "/update", this.updateBooking);
         this.router.get(this.path + '/:id', this.viewDetailBookingRoom);
-        this.router.get(this.path + '/editting/:id', this.getBookingById);
+        this.router.get(this.path + '/edit/:id', this.getBookingById);
     }
 
     //save booking
@@ -23,7 +24,7 @@ export class BookRoomController {
         try {
             const data = request.body;
             const date = new Date();
-            const fullDate = date.getFullYear().toString().concat(date.getMonth().toString(), date.getDate().toString(), '-', date.getHours().toString(),date.getMinutes().toString(), date.getSeconds().toString());
+            const fullDate = date.getFullYear().toString().concat(date.getMonth().toString(), date.getDate().toString(), '-', date.getHours().toString(), date.getMinutes().toString(), date.getSeconds().toString());
             const id = data.userId.toString() + '_' + fullDate;//tránh trùng lịch bị overrride + dễ truy vấn khi xem chi tiết
             await db.ref('Booking').child(id)
                 .set({
@@ -35,7 +36,7 @@ export class BookRoomController {
                     status: data.status,
                     userId: data.userId,
                     id: id //to update or tracking data
-                }, (error) => {
+                }, async (error) => {
                     if (error) {
                         response.status(500).send(error);
                     } else {
@@ -61,6 +62,10 @@ export class BookRoomController {
                             id: id,
                             status: data.status
                         });
+                        if(data.status === 'accepted'){
+                            const currentClaims = (await adminAuth.getUser(data.uid)).customClaims;
+                            adminAuth.setCustomUserClaims(data.uid, {})
+                        }
                     }
                 });
             return response.status(200).json(data);
@@ -97,7 +102,7 @@ export class BookRoomController {
             const data = request.body;//id + status + roomName+date+time
             await db.ref('Booking').child(data.id).update({
                 status: data.status,
-            }, (error) => {
+            }, async (error) => {
                 if (error) {
                     response.status(500).send(error);
                 } else {
@@ -105,7 +110,7 @@ export class BookRoomController {
                     notification.sendMessage({
                         message: 'Your requset to book room ' + data.roomName + ' at ' + data.date + ' ' + data.time,
                         receiver: data.id?.split('_')[0] || ' ',
-                        sender: 'thanhntse63563', //fake account admin
+                        sender: 'admin', //fake account admin
                         sendAt: (new Date()).toString(),
                         isRead: false,
                         typeRequest: 'bookRoomRequest',//có 3 loại, dựa vào typeRequest để truy cập đúng bảng
@@ -142,11 +147,7 @@ export class BookRoomController {
                     reason: data.reason,
                     status: data.status,
                     userId: data.userId
-                })
-
-
-
-
+                });
             return response.send("ok");
         } catch (error) {
             response.status(500).send(error);
@@ -213,7 +214,7 @@ export class BookRoomController {
                 } else {
                     //send noti to user
                     notification.sendMessage({
-                        message: 'Your request to book room ' + data.roomName + ' at ' + data.date + ' from ' + data.startTime+' to '+data.endTime,
+                        message: 'Your request to book room ' + data.roomName + ' at ' + data.date + ' from ' + data.startTime + ' to ' + data.endTime,
                         receiver: data.id?.split('_')[0] || ' ',
                         sender: 'thanhntse63563', //fake account admin
                         sendAt: (new Date()).toString(),

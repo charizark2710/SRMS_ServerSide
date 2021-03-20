@@ -1,5 +1,5 @@
 import * as express from 'express';
-import { DynamicCalendar, calendarSchema } from '../model/Calendar'
+import { Calendar, calendarSchema } from '../model/Calendar'
 import auth from './Authenticate';
 
 export default class CalendarController {
@@ -112,7 +112,7 @@ export default class CalendarController {
 
     addSchedule = async (request: express.Request, response: express.Response) => {
         try {
-            const data: DynamicCalendar = request.body;
+            const data: Calendar = request.body;
             const reqFrom = parseInt(data.from);
             const reqTo = parseInt(data.to);
             let isOcc: boolean = false;
@@ -144,7 +144,7 @@ export default class CalendarController {
     editSchedule = async (request: express.Request, response: express.Response) => {
         try {
             const id = request.params.id;
-            const data: DynamicCalendar = request.body;
+            const data: Calendar = request.body;
             calendarSchema.child(id).remove();
             calendarSchema.child(id).set(data);
             response.status(200).send('ok');
