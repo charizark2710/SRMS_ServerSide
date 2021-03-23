@@ -14,8 +14,6 @@ export class RoomController {
         this.router.patch(this.path + "/switchDeviceStatus", auth, roomPermission(), this.switchDeviceStatus);
         this.router.put(this.path + "/switchAllDevicesStatus", auth, roomPermission(), this.switchAllDevicesStatus);
         this.router.post(this.path + "/sendDevicesStatus", auth, roomPermission(), this.sendDevicesStatus);
-        // this.router.delete(this.path + "/delete/:id", auth, authorized({ hasRole: ['admin'] }), this.deleteRoom);
-        // this.router.patch(this.path + "/banned/:id/restore", auth, authorized({ hasRole: ['admin', 'student', 'lecture'] }), this.restoreRoom);
         this.router.get(this.path + "/countNumberTurnOnDevices", auth, roomPermission(), this.countNumberTurnOnDevices);
     }
 
@@ -75,8 +73,6 @@ export class RoomController {
         const devices = {
             onLight: 0,
             totalLight: 0,
-            onGround: 0,
-            totalGround: 0,
             onFan: 0,
             totalFan: 0,
             onConditioner: 0,
@@ -97,12 +93,6 @@ export class RoomController {
                         devices.onFan++;
                     }
                 }
-                if (value.ground === 1 || value.ground === 0) {
-                    devices.totalGround++;
-                    if (value.ground === 1) {
-                        devices.onGround++;
-                    }
-                }
                 if (value.light === 1 || value.light === 0) {
                     devices.totalLight++;
                     if (snapshot.val().light === 1) {
@@ -110,8 +100,6 @@ export class RoomController {
                     }
                 }
             });
-
-
             return response.json(devices);
         } catch (error) {
             response.status(500).send(error);

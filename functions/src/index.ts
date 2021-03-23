@@ -16,8 +16,6 @@ const socketServer: io.Server = new io.Server({
     cors: { credentials: true, allowedHeaders: "X-Requested-With,content-type", origin: 'https://learning-5071c.web.app' },
 });
 
-console.log(functions.config());
-
 socketServer.listen(9001);
 
 let media: mediaServer;

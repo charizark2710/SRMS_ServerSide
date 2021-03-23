@@ -1,7 +1,6 @@
 import * as express from 'express';
 import { db } from "../connector/configFireBase"
 import notification from './NotificationManagement'
-import { adminAuth } from "../connector/configFireBase"
 
 export class BookRoomController {
     public router = express.Router();
@@ -24,7 +23,7 @@ export class BookRoomController {
         try {
             const data = request.body;
             const date = new Date();
-            const fullDate = date.getFullYear().toString().concat(date.getMonth().toString(), date.getDate().toString(), '-', date.getHours().toString(), date.getMinutes().toString(), date.getSeconds().toString());
+            const fullDate = date.getFullYear().toString().concat(date.getMonth().toString(), date.getDate().toString(), '-', date.getHours().toString(), date.getMinutes().toString(), date.getSeconds().toString(), date.getMilliseconds().toString());
             const id = data.userId.toString() + '_' + fullDate;//tránh trùng lịch bị overrride + dễ truy vấn khi xem chi tiết
             await db.ref('Booking').child(id)
                 .set({
@@ -43,7 +42,7 @@ export class BookRoomController {
                         //gửi cho admin
                         notification.sendMessage({
                             message: ' sent a request to book room ' + data.roomName + ' at ' + data.date + ' from ' + data.startTime + ' to ' + data.endTime,
-                            receiver: "thanhntse63563",//fake account admin
+                            receiver: "admin",
                             sender: data.userId,
                             sendAt: fullDate,
                             isRead: false,
@@ -55,17 +54,13 @@ export class BookRoomController {
                         notification.sendMessage({
                             message: 'Your request to book room ' + data.roomName + ' at ' + data.date + ' from ' + data.startTime + ' to ' + data.endTime,
                             receiver: data.userId,
-                            sender: "thanhntse63563",//fake account admin
-                            sendAt: (new Date()).toString(),
+                            sender: "admin",
+                            sendAt: fullDate,
                             isRead: false,
                             typeRequest: 'bookRoomRequest',//có 3 loại, dựa vào typeRequest để truy cập đúng bảng
                             id: id,
                             status: data.status
                         });
-                        if(data.status === 'accepted'){
-                            const currentClaims = (await adminAuth.getUser(data.uid)).customClaims;
-                            adminAuth.setCustomUserClaims(data.uid, {})
-                        }
                     }
                 });
             return response.status(200).json(data);
@@ -78,7 +73,7 @@ export class BookRoomController {
         try {
             let result = {};
             const id = request.params.id;
-            db.ref('notification').child('thanhntse63563').child(id.toString()).update({
+            db.ref('notification').child('admin').child(id.toString()).update({
                 isRead: true
             });
             await db.ref('Booking').child(id).get().then(function (snapshot) {
@@ -106,12 +101,13 @@ export class BookRoomController {
                 if (error) {
                     response.status(500).send(error);
                 } else {
+                    const date = new Date();
                     //send noti to user
                     notification.sendMessage({
                         message: 'Your requset to book room ' + data.roomName + ' at ' + data.date + ' ' + data.time,
                         receiver: data.id?.split('_')[0] || ' ',
-                        sender: 'admin', //fake account admin
-                        sendAt: (new Date()).toString(),
+                        sender: 'admin', 
+                        sendAt: `${date.getFullYear().toString()}${date.getMonth().toString()}${date.getDate().toString()}-${date.getHours().toString()}${date.getMinutes().toString()}${date.getSeconds().toString()}${date.getMilliseconds().toString()}`,
                         isRead: false,
                         typeRequest: 'bookRoomRequest',//có 3 loại, dựa vào typeRequest để truy cập đúng bảng
                         id: data.id,
@@ -125,35 +121,6 @@ export class BookRoomController {
         }
     }
 
-    //from date, startTime, endTime =>
-    //arr1: get rooms from lecture schedule
-    //arr2: get rooms from booking schedule
-    //arr3: arr1 union arr2
-    //arr4: get all rooms
-    //arr5: return arr4-arr3 
-    getEmptyRooms = async (request: express.Request, response: express.Response) => {
-        try {
-            const data = request.body;
-
-            const lectureSchedules = ['201', '202']; //example
-            const bookingSchedules = await db.ref('Booking').child(data.date).once('value')
-                .then(function (snapshot) {
-                    //return snapshot.getKey();
-                })
-
-
-            await db.ref('Booking').child(data.date).child(data.roomName).child(data.startTime + '-' + data.endTime)
-                .set({
-                    reason: data.reason,
-                    status: data.status,
-                    userId: data.userId
-                });
-            return response.send("ok");
-        } catch (error) {
-            response.status(500).send(error);
-        }
-    }
-
     cancelBookingRoom = async (request: express.Request, response: express.Response) => {
         try {
             const bookingId = request.params.id;
@@ -164,7 +131,7 @@ export class BookRoomController {
                     //xoa noti user
                     db.ref('notification').child(userId).child(bookingId.toString()).remove();
                     //xoa noti admin
-                    db.ref('notification').child('thanhntse63563').child(bookingId.toString()).remove();
+                    db.ref('notification').child('admin').child(bookingId.toString()).remove();
                 })
                 .catch(function (error) {
                     console.log("Remove failed: " + error.message)
@@ -212,12 +179,13 @@ export class BookRoomController {
                 if (error) {
                     response.status(500).send(error);
                 } else {
+                    const date = new Date()
                     //send noti to user
                     notification.sendMessage({
                         message: 'Your request to book room ' + data.roomName + ' at ' + data.date + ' from ' + data.startTime + ' to ' + data.endTime,
                         receiver: data.id?.split('_')[0] || ' ',
-                        sender: 'thanhntse63563', //fake account admin
-                        sendAt: (new Date()).toString(),
+                        sender: 'admin', 
+                        sendAt: `${date.getFullYear().toString()}${date.getMonth().toString()}${date.getDate().toString()}-${date.getHours().toString()}${date.getMinutes().toString()}${date.getSeconds().toString()}${date.getMilliseconds().toString()}`,
                         isRead: false,
                         typeRequest: 'bookRoomRequest',//có 3 loại, dựa vào typeRequest để truy cập đúng bảng
                         id: data.id,
@@ -226,9 +194,9 @@ export class BookRoomController {
                     //gửi cho admin
                     notification.sendMessage({
                         message: ' sent a request to book room ' + data.roomName + ' at ' + data.date + ' from ' + data.startTime + ' to ' + data.endTime,
-                        receiver: "thanhntse63563",//fake account admin
+                        receiver: "admin",
                         sender: data.userId,
-                        sendAt: (new Date()).toString(),
+                        sendAt: `${date.getFullYear().toString()}${date.getMonth().toString()}${date.getDate().toString()}-${date.getHours().toString()}${date.getMinutes().toString()}${date.getSeconds().toString()}${date.getMilliseconds().toString()}`,
                         isRead: false,
                         typeRequest: 'bookRoomRequest',//có 3 loại, dựa vào typeRequest để truy cập đúng bảng
                         id: data.id,

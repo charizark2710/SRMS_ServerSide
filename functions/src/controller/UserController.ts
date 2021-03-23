@@ -76,7 +76,7 @@ export class UserController {
             const uid = request.params.id;
             // const user = await userSchema.doc(uid).get();
             const date = new Date();
-            const fullDate = date.getFullYear().toString().concat(date.getMonth().toString(), date.getDate().toString(), '-', date.getHours().toString(), date.getMinutes().toString(), date.getSeconds().toString());
+            const fullDate = date.getFullYear().toString().concat(date.getMonth().toString(), date.getDate().toString(), '-', date.getHours().toString(), date.getMinutes().toString(), date.getSeconds().toString(), date.getMilliseconds().toString());
             const id = uid + '_' + fullDate;//tránh trùng lịch bị overrride + dễ truy vấn khi xem chi tiết
             const user = await userSchema.child(uid).get();
             notification.sendMessage({

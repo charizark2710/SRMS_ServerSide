@@ -26,7 +26,7 @@ function getBuffer(fullText: string) {
     calendarSchema.on('child_added', snap => {
         const value: Calendar = snap.val();
         const date = value.date;
-        const time = (value.from as string).concat('-', value.to);
+        const time = value.from.substring(0, value.from.length - 3).concat('000', '-', value.to.substring(0, value.to.length - 3) + '000');
         if (date === fullText) {
             // dateBuffer.push(value.userId + "-" + date + '-' + value.room + '-' + value.reason);
             timeBuffer.push(value.userId + "-" + time + '-' + value.room + '-' + value.reason);
@@ -35,7 +35,7 @@ function getBuffer(fullText: string) {
     calendarSchema.off('child_added', snap => {
         const value: Calendar = snap.val();
         const date = value.date;
-        const time = (value.from as string).concat('-', value.to);
+        const time = value.from.substring(0, value.from.length - 3).concat('000', '-', value.to.substring(0, value.to.length - 3) + '000');
         if (date === fullText) {
             // dateBuffer.push(value.userId + "-" + date + '-' + value.room + '-' + value.reason);
             timeBuffer.push(value.userId + "-" + time + '-' + value.room + '-' + value.reason);
@@ -46,18 +46,16 @@ function getBuffer(fullText: string) {
 
 function deleteBuffer() {
     calendarSchema.on('child_removed', snap => {
-        const value = (snap.key as string).split('-');
-        // const date = value[0];
-        const time = value[1];
-        // dateBuffer.filter(item => (item !== date));
-        timeBuffer.filter(item => (item !== time));
+        const value: Calendar = snap.val();
+        const time = (value.userId + '-' + value.from.substring(0, value.from.length - 3).concat('000', '-', value.to.substring(0, value.to.length - 3) + '000') + '-' + value.room + '-' + value.reason).toString();
+        const temp = timeBuffer.filter(item => (item !== time));
+        timeBuffer = temp;
     });
     calendarSchema.off('child_removed', snap => {
-        const value = (snap.key as string).split('-');
-        // const date = value[0];
-        const time = value[1];
-        // dateBuffer.filter(item => (item !== date));
-        timeBuffer.filter(item => (item !== time));
+        const value: Calendar = snap.val();
+        const time = (value.userId + '-' + value.from.substring(0, value.from.length - 3).concat('000', '-', value.to.substring(0, value.to.length - 3) + '000') + '-' + value.room + '-' + value.reason).toString();
+        const temp = timeBuffer.filter(item => (item !== time));
+        timeBuffer = temp;
     });
 }
 
