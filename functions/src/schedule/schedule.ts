@@ -46,14 +46,14 @@ export default class Schedule {
                 const temp2 = (parseInt(value[2]) - 10000000).toString();
                 if (temp1 === fullTime) {
                     notification.sendMessage({ id: `admin_${YMD.concat('-', fullTime)}`, isRead: false, message: `Còn 1 tiếng là đến phòng ${value[3]} với lý do ${value[4]}`, receiver: value[0], sender: "admin", sendAt: YMD.concat('-', fullTime) });
-                    const userInfo: User = (await userSchema.child(value[0]).get()).val();
-                    adminAuth.setCustomUserClaims(userInfo.uid, { room: value[3] });
                 }
                 else if (temp2 === fullTime) {
                     notification.sendMessage({ id: `admin_${YMD.concat('-', fullTime)}`, isRead: false, message: `Còn 1 tiếng là hết giờ phòng ${value[3]} với lý do ${value[4]}`, receiver: value[0], sender: "admin", sendAt: YMD.concat('-', fullTime) });
                 }
                 if (value[1] === fullTime) {
+                    const userInfo: User = (await userSchema.child(value[0]).get()).val();
                     notification.sendMessage({ id: `admin_${YMD.concat('-', fullTime)}`, isRead: false, message: `Đến giờ phòng ${value[3]} với lý do ${value[4]}`, receiver: value[0], sender: "admin", sendAt: YMD.concat('-', fullTime) });
+                    adminAuth.setCustomUserClaims(userInfo.uid, { room: value[3] });
                 }
                 else if (value[2] === fullTime) {
                     const userInfo: User = (await userSchema.child(value[0]).get()).val();
