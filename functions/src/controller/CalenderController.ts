@@ -10,7 +10,7 @@ export default class CalendarController {
     }
 
     init() {
-        this.router.get(this.url + '/view', auth, this.viewCalendar);
+        this.router.get(this.url, auth, this.viewCalendar);
         this.router.post(this.url + '/add', auth, this.addSchedule);
         this.router.get(this.url + '/:id', auth, this.getSchedules);
         this.router.put(this.url + '/:id', auth, this.editSchedule);
@@ -29,7 +29,7 @@ export default class CalendarController {
                 if (selectedRooms) {
                     const rooms = selectedRooms.toString().split(',');
                     for (const date of dates) {
-                        (await calendarSchema.orderByKey().startAt(date + " ").endAt(date + "~").get()).forEach(snap => {
+                        calendarSchema.child(date).on('child_added', snap => {
                             const val = snap.val();
                             for (const room of rooms) {
                                 if (userId === val.userId && room === val.room) {
@@ -40,9 +40,33 @@ export default class CalendarController {
                     }
                 } else {
                     for (const date of dates) {
-                        (await calendarSchema.orderByKey().startAt(date + " ").endAt(date + "~").get()).forEach(snap => {
+                        calendarSchema.child(date).on('child_added', snap => {
                             const val = snap.val();
                             if (userId === val.userId) {
+                                result.push(val);
+                            }
+                        });
+                    }
+                }
+            } else if (isCurrentUser?.toString() === '0') {
+                const userId = response.locals.employeeId;
+                if (selectedRooms) {
+                    const rooms = selectedRooms.toString().split(',');
+                    for (const date of dates) {
+                        calendarSchema.child(date).on('child_added', snap => {
+                            const val = snap.val();
+                            for (const room of rooms) {
+                                if (userId !== val.userId && room === val.room) {
+                                    result.push(val);
+                                }
+                            }
+                        });
+                    }
+                } else {
+                    for (const date of dates) {
+                        calendarSchema.child(date).on('child_added', snap => {
+                            const val = snap.val();
+                            if (userId !== val.userId) {
                                 result.push(val);
                             }
                         });
@@ -54,7 +78,7 @@ export default class CalendarController {
                 if (selectedRooms) {
                     const rooms = selectedRooms.toString().split(',');
                     for (const date of dates) {
-                        (await calendarSchema.orderByKey().startAt(date + " ").endAt(date + "~").get()).forEach(snap => {
+                        calendarSchema.child(date).on('child_added', snap => {
                             const val = snap.val();
                             for (const room of rooms) {
                                 if (room === val.room) {
@@ -65,7 +89,7 @@ export default class CalendarController {
                     }
                 } else {
                     for (const date of dates) {
-                        (await calendarSchema.orderByKey().startAt(date + " ").endAt(date + "~").get()).forEach(snap => {
+                        calendarSchema.child(date).on('child_added', snap => {
                             const val = snap.val();
                             result.push(val);
                         });
@@ -78,32 +102,64 @@ export default class CalendarController {
                 if (selectedRooms) {
                     const rooms = selectedRooms.toString().split(',');
                     rooms.forEach(async room => {
-                        (await calendarSchema.get()).forEach(snap => {
-                            if (snap.val().userId === userId && snap.val().room === room) {
+                        calendarSchema.on('child_added', async snap => {
+                            snap.ref.on('child_added', snap => {
+                                if (snap.val().userId === userId && snap.val().room === room) {
+                                    result.push(snap.val());
+                                }
+                            });
+                        });
+                    });
+                } else {
+                    calendarSchema.on('child_added', async snap => {
+                        snap.ref.on('child_added', snap => {
+                            if (snap.val().userId === userId) {
                                 result.push(snap.val());
                             }
                         });
                     });
-                } else {
-                    (await calendarSchema.get()).forEach(snap => {
-                        if (snap.val().userId === userId) {
-                            result.push(snap.val());
-                        }
-                    });
                 }
-            } else {
+            } else if (isCurrentUser?.toString() === '0') {
+                const userId = response.locals.employeeId;
                 if (selectedRooms) {
                     const rooms = selectedRooms.toString().split(',');
                     rooms.forEach(async room => {
-                        (await calendarSchema.get()).forEach(snap => {
-                            if (snap.val().room === room) {
+                        calendarSchema.on('child_added', async snap => {
+                            snap.ref.on('child_added', snap => {
+                                if (snap.val().userId !== userId && snap.val().room === room) {
+                                    result.push(snap.val());
+                                }
+                            });
+                        });
+                    });
+                } else {
+                    calendarSchema.on('child_added', async snap => {
+                        snap.ref.on('child_added', snap => {
+                            if (snap.val().userId !== userId) {
                                 result.push(snap.val());
                             }
                         });
                     });
+                }
+            }
+            else {
+                if (selectedRooms) {
+                    const rooms = selectedRooms.toString().split(',');
+                    rooms.forEach(async room => {
+                        calendarSchema.on('child_added', async snap => {
+                            snap.ref.on('child_added', snap => {
+                                if (snap.val().room === room) {
+                                    result.push(snap.val());
+                                }
+                            });
+                        });
+                    });
                 } else {
-                    const value = (await calendarSchema.get()).val();
-                    result.push(value);
+                    calendarSchema.on('child_added', async snap => {
+                        snap.ref.on('child_added', snap => {
+                            result.push(snap.val());
+                        })
+                    })
                 }
             }
         }
@@ -116,22 +172,22 @@ export default class CalendarController {
             const reqFrom = parseInt(data.from);
             const reqTo = parseInt(data.to);
             let isOcc: boolean = false;
-            isOcc = (await calendarSchema.orderByKey().startAt(data.date + " ").endAt(data.date + "~").get()).forEach(snap => {
-                const value = snap.val();
+            calendarSchema.child(data.date).on('child_added', snap => {
+                const value: Calendar = snap.val();
                 const from = parseInt(value.from);
                 const to = parseInt(value.to);
-                if (value.date === data.date) {
+                if (value.date === data.date && value.room === data.room) {
                     if (reqFrom === from || reqTo === to) {
-                        return true;
+                        isOcc = true;
                     } else if (reqFrom > from && reqFrom < to) {
-                        return true;
+                        isOcc = true;
                     } else if (reqTo > from && reqTo < to) {
-                        return true;
+                        isOcc = true;
                     }
                 }
             });
             if (!isOcc) {
-                calendarSchema.child(data.date.concat('-', data.from, '-', data.to, '-', data.room)).set(data);
+                calendarSchema.child(data.date).child(data.from.concat('-', data.to, '-', data.room)).set(data);
                 response.status(200).send('ok');
             } else {
                 response.status(400).send('Lich kin roi');
@@ -157,7 +213,7 @@ export default class CalendarController {
         try {
             const id = request.params.id;
             const result = (await calendarSchema.child(id).get()).val();
-            response.status(200).json(result);            
+            response.status(200).json(result);
         } catch (error) {
             response.status(500).send(error);
         }

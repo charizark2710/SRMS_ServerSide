@@ -23,7 +23,7 @@ async function defineDay() {
 }
 
 function getBuffer(fullText: string) {
-    calendarSchema.on('child_added', snap => {
+    calendarSchema.child(fullDay.currentDay.year.concat(fullDay.currentDay.month, fullDay.currentDay.date)).on('child_added', snap => {
         const value: Calendar = snap.val();
         const date = value.date;
         const time = value.from.substring(0, value.from.length - 3).concat('000', '-', value.to.substring(0, value.to.length - 3) + '000');
@@ -32,7 +32,7 @@ function getBuffer(fullText: string) {
             timeBuffer.push(value.userId + "-" + time + '-' + value.room + '-' + value.reason);
         }
     });
-    calendarSchema.off('child_added', snap => {
+    calendarSchema.child(fullDay.currentDay.year.concat(fullDay.currentDay.month, fullDay.currentDay.date)).off('child_added', snap => {
         const value: Calendar = snap.val();
         const date = value.date;
         const time = value.from.substring(0, value.from.length - 3).concat('000', '-', value.to.substring(0, value.to.length - 3) + '000');
@@ -45,13 +45,13 @@ function getBuffer(fullText: string) {
 }
 
 function deleteBuffer() {
-    calendarSchema.on('child_removed', snap => {
+    calendarSchema.child(fullDay.currentDay.year.concat(fullDay.currentDay.month, fullDay.currentDay.date)).on('child_removed', snap => {
         const value: Calendar = snap.val();
         const time = (value.userId + '-' + value.from.substring(0, value.from.length - 3).concat('000', '-', value.to.substring(0, value.to.length - 3) + '000') + '-' + value.room + '-' + value.reason).toString();
         const temp = timeBuffer.filter(item => (item !== time));
         timeBuffer = temp;
     });
-    calendarSchema.off('child_removed', snap => {
+    calendarSchema.child(fullDay.currentDay.year.concat(fullDay.currentDay.month, fullDay.currentDay.date)).off('child_removed', snap => {
         const value: Calendar = snap.val();
         const time = (value.userId + '-' + value.from.substring(0, value.from.length - 3).concat('000', '-', value.to.substring(0, value.to.length - 3) + '000') + '-' + value.room + '-' + value.reason).toString();
         const temp = timeBuffer.filter(item => (item !== time));

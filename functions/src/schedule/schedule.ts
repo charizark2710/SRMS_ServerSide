@@ -58,7 +58,7 @@ export default class Schedule {
                 else if (value[2] === fullTime) {
                     const userInfo: User = (await userSchema.child(value[0]).get()).val();
                     notification.sendMessage({ id: `admin_${YMD.concat('-', fullTime)}`, isRead: false, message: `Hết Giờ phòng ${value[3]} với lý do ${value[4]}`, receiver: value[0], sender: "admin", sendAt: YMD.concat('-', fullTime) });
-                    await calendarSchema.child(YMD.concat('-', value[1], '-', value[2], '-', value[3])).remove();
+                    // await calendarSchema.child(YMD).child(value[1].concat('-', value[2], '-', value[3])).remove();
                     adminAuth.setCustomUserClaims(userInfo.uid, { room: null });
                 }
             });
