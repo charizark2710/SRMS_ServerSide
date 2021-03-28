@@ -12,7 +12,7 @@ export class RoomController {
 
     init() {
         this.router.patch(this.path + "/switchDeviceStatus", auth, roomPermission(), this.switchDeviceStatus);
-        this.router.put(this.path + "/switchAllDevicesStatus", auth, roomPermission(), this.switchAllDevicesStatus);
+        this.router.put(this.path + "/switchAllDevicesStatus/:id", auth, roomPermission(), this.switchAllDevicesStatus);
         this.router.post(this.path + "/sendDevicesStatus", auth, roomPermission(), this.sendDevicesStatus);
         this.router.get(this.path + "/countNumberTurnOnDevices", auth, roomPermission(), this.countNumberTurnOnDevices);
     }
@@ -36,13 +36,15 @@ export class RoomController {
 
     switchAllDevicesStatus = async (request: express.Request, response: express.Response) => {
         try {
-            const data = request.body;
+            const reqRoom = request.params.id;
             const room = response.locals.room;
-            if (data.roomName === room || response.locals.role === 'admin') {
-                await roomSchema.child(data.roomName).update(data.devices);
+            const status = parseInt(request.query.q as string);
+            if (reqRoom === room || response.locals.role === 'admin') {
+                const device: Room = { conditioner: status, fan: status, light: status, powerPlug: status };
+                await roomSchema.child(reqRoom).set(device);
                 return response.send("ok");
             } else {
-                response.status(403).send(`may khong duoc dung phong ${data.roomName}`);
+                response.status(403).send(`may khong duoc dung phong ${reqRoom}`);
             }
         } catch (error) {
             response.status(500).send(error);

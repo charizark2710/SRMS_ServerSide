@@ -23,77 +23,39 @@ export default class CalendarController {
         const result: any[] = [];
         if (selectedDate) {
             const dates = selectedDate.toString().split(',');
+            const promise = dates.map(date => { return calendarSchema.child(date).once('value', snap => snap) });
+            const snaps = await Promise.all(promise);
             //Chỉ hiện các sự kiện của người dùng hiện tại
             if (isCurrentUser?.toString() === '1') {
                 const userId = response.locals.employeeId;
                 if (selectedRooms) {
                     const rooms = selectedRooms.toString().split(',');
-                    for (const date of dates) {
-                        calendarSchema.child(date).on('child_added', snap => {
-                            const val = snap.val();
-                            for (const room of rooms) {
-                                if (userId === val.userId && room === val.room) {
-                                    result.push(val);
-                                }
-                            }
-                        });
-                    }
+                    snaps.forEach(snap => {
+                        result.push((Object.values(snap.val()) as any[]).filter(val => {
+                            return (rooms.includes(val.room) && val.userId === userId)
+                        }));
+                    });
                 } else {
-                    for (const date of dates) {
-                        calendarSchema.child(date).on('child_added', snap => {
-                            const val = snap.val();
-                            if (userId === val.userId) {
-                                result.push(val);
-                            }
-                        });
-                    }
-                }
-            } else if (isCurrentUser?.toString() === '0') {
-                const userId = response.locals.employeeId;
-                if (selectedRooms) {
-                    const rooms = selectedRooms.toString().split(',');
-                    for (const date of dates) {
-                        calendarSchema.child(date).on('child_added', snap => {
-                            const val = snap.val();
-                            for (const room of rooms) {
-                                if (userId !== val.userId && room === val.room) {
-                                    result.push(val);
-                                }
-                            }
-                        });
-                    }
-                } else {
-                    for (const date of dates) {
-                        calendarSchema.child(date).on('child_added', snap => {
-                            const val = snap.val();
-                            if (userId !== val.userId) {
-                                result.push(val);
-                            }
-                        });
-                    }
+                    snaps.forEach(snap => {
+                        result.push((Object.values(snap.val()) as any[]).filter(val => {
+                            return (val.userId === userId)
+                        }));
+                    });
                 }
             }
             //Hiển thị tất cả các sự kiện trong lịch
             else {
                 if (selectedRooms) {
                     const rooms = selectedRooms.toString().split(',');
-                    for (const date of dates) {
-                        calendarSchema.child(date).on('child_added', snap => {
-                            const val = snap.val();
-                            for (const room of rooms) {
-                                if (room === val.room) {
-                                    result.push(val);
-                                }
-                            }
-                        });
-                    }
+                    snaps.forEach(snap => {
+                        result.push((Object.values(snap.val()) as any[]).filter(val => {
+                            return (rooms.includes(val.room))
+                        }));
+                    });
                 } else {
-                    for (const date of dates) {
-                        calendarSchema.child(date).on('child_added', snap => {
-                            const val = snap.val();
-                            result.push(val);
-                        });
-                    }
+                    snaps.forEach(snap => {
+                        result.push(Object.values(snap.val()));
+                    });
                 }
             }
         } else {
@@ -101,42 +63,20 @@ export default class CalendarController {
                 const userId = response.locals.employeeId;
                 if (selectedRooms) {
                     const rooms = selectedRooms.toString().split(',');
-                    rooms.forEach(async room => {
-                        calendarSchema.on('child_added', async snap => {
-                            snap.ref.on('child_added', snap => {
-                                if (snap.val().userId === userId && snap.val().room === room) {
-                                    result.push(snap.val());
-                                }
-                            });
-                        });
-                    });
-                } else {
                     calendarSchema.on('child_added', async snap => {
-                        snap.ref.on('child_added', snap => {
-                            if (snap.val().userId === userId) {
-                                result.push(snap.val());
+                        const vals = snap.val();
+                        (Object.values(vals) as any[]).forEach(val => {
+                            if (rooms.includes(val.room) && val.userId === userId) {
+                                result.push(val);
                             }
                         });
                     });
-                }
-            } else if (isCurrentUser?.toString() === '0') {
-                const userId = response.locals.employeeId;
-                if (selectedRooms) {
-                    const rooms = selectedRooms.toString().split(',');
-                    rooms.forEach(async room => {
-                        calendarSchema.on('child_added', async snap => {
-                            snap.ref.on('child_added', snap => {
-                                if (snap.val().userId !== userId && snap.val().room === room) {
-                                    result.push(snap.val());
-                                }
-                            });
-                        });
-                    });
                 } else {
                     calendarSchema.on('child_added', async snap => {
-                        snap.ref.on('child_added', snap => {
-                            if (snap.val().userId !== userId) {
-                                result.push(snap.val());
+                        const vals = Object.values(snap.val()) as any[];
+                        vals.forEach(val => {
+                            if (val.userId === userId) {
+                                result.push(val);
                             }
                         });
                     });
@@ -145,21 +85,18 @@ export default class CalendarController {
             else {
                 if (selectedRooms) {
                     const rooms = selectedRooms.toString().split(',');
-                    rooms.forEach(async room => {
-                        calendarSchema.on('child_added', async snap => {
-                            snap.ref.on('child_added', snap => {
-                                if (snap.val().room === room) {
-                                    result.push(snap.val());
-                                }
-                            });
+                    calendarSchema.on('child_added', async snap => {
+                        const vals = snap.val();
+                        (Object.values(vals) as any[]).forEach(val => {
+                            if (rooms.includes(val.room)) {
+                                result.push(val);
+                            }
                         });
                     });
                 } else {
-                    calendarSchema.on('child_added', async snap => {
-                        snap.ref.on('child_added', snap => {
-                            result.push(snap.val());
-                        })
-                    })
+                    await calendarSchema.once('value', async snap => {
+                        Object.values(snap.val()).forEach(val => result.push(Object.values(val as any)));
+                    });
                 }
             }
         }
@@ -172,6 +109,7 @@ export default class CalendarController {
             const reqFrom = parseInt(data.from);
             const reqTo = parseInt(data.to);
             let isOcc: boolean = false;
+            // const test = new Date(parseInt(data.date.slice(0, 4)), parseInt(data.date.slice(4, 6)) - 1, parseInt(data.date.slice(6, 8)));
             calendarSchema.child(data.date).on('child_added', snap => {
                 const value: Calendar = snap.val();
                 const from = parseInt(value.from);
@@ -187,7 +125,7 @@ export default class CalendarController {
                 }
             });
             if (!isOcc) {
-                calendarSchema.child(data.date).child(data.from.concat('-', data.to, '-', data.room)).set(data);
+                calendarSchema.child(data.date).child(data.room.concat('-', data.from, '-', data.to)).set(data);
                 response.status(200).send('ok');
             } else {
                 response.status(400).send('Lich kin roi');

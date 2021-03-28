@@ -1,6 +1,5 @@
 import { dateBuffer, timeBuffer, getBuffer, deleteBuffer, defineDay, fullDay, clearBuffer } from './scheduleBuffer'
 import notification from '../controller/NotificationManagement'
-import { calendarSchema } from '../model/Calendar'
 import { adminAuth } from '../connector/configFireBase'
 import { userSchema, User } from '../model/UserModel'
 
