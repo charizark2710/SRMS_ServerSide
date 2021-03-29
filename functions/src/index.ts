@@ -25,18 +25,9 @@ posenet.load({
     multiplier: 0.75,
     quantBytes: 2,
     inputResolution: { width: 640, height: 480 }
-}).then(value => media = new mediaServer(value));
-
-socketServer.on('connection', (socket: io.Socket) => {
-    console.log((new Date()) + ' Connection accepted ' + socket.client);
-    while (!media) {
-        console.log('wait to finish');
-    }
-    socket.emit('sendNoti', 'done');
-    media.dectectMedia(socket);
-    socket.on('disconnect', function (reason) {
-        console.log((new Date()) + ' disconnect ' + reason);
-    });
+}).then(async net => {
+    media = new mediaServer(net);
+    media.dectectMedia();
 });
 
 app.use(cookieParser());
