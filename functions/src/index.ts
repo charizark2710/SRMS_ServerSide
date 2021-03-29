@@ -1,5 +1,5 @@
 import * as functions from 'firebase-functions';
-import express, { NextFunction } from 'express';
+import express from 'express';
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser"
 import { Route } from './router/route'
@@ -8,15 +8,8 @@ import * as posenet from '@tensorflow-models/posenet'
 import { db } from './connector/configFireBase'
 import notification from './controller/NotificationManagement'
 import Schedule from './schedule/schedule'
-import * as io from 'socket.io'
 
 const app = express();
-
-const socketServer: io.Server = new io.Server({
-    cors: { credentials: true, allowedHeaders: "X-Requested-With,content-type", origin: 'https://learning-5071c.web.app' },
-});
-
-socketServer.listen(9001);
 
 let media: mediaServer;
 posenet.load({

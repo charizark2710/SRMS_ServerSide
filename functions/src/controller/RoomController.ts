@@ -24,7 +24,7 @@ export class RoomController {
             const data = request.body;
             const room = response.locals.room;
             if (data.roomName === room || response.locals.role === 'admin') {
-                await roomSchema.child(data.roomName).update(data.device);
+                await roomSchema.child(data.roomName).child('device').update(data.device);
                 return response.send("ok");
             } else {
                 response.status(403).send(`may khong duoc dung phong ${data.roomName}`);
@@ -41,7 +41,7 @@ export class RoomController {
             const status = parseInt(request.query.q as string);
             if (reqRoom === room || response.locals.role === 'admin') {
                 const device: Room = { conditioner: status, fan: status, light: status, powerPlug: status };
-                await roomSchema.child(reqRoom).set(device);
+                await roomSchema.child(reqRoom).child('device').set(device);
                 return response.send("ok");
             } else {
                 response.status(403).send(`may khong duoc dung phong ${reqRoom}`);
@@ -57,7 +57,7 @@ export class RoomController {
             const data = request.body;
             const room = response.locals.room;
             if (data.roomName === room || response.locals.role === 'admin') {
-                const devicesData: Room = await roomSchema.child(data.roomName).once('value')
+                const devicesData: Room = await roomSchema.child(data.roomName).child('device').once('value')
                     .then(function (snapshot) {
                         return snapshot.val();
                     })
@@ -82,7 +82,7 @@ export class RoomController {
         }
         try {
             (await roomSchema.get()).forEach(snapshot => {
-                const value: Room = snapshot.val();
+                const value: Room = snapshot.val().device;
                 if (value.conditioner === 1 || value.conditioner === 0) {
                     devices.totalConditioner++;
                     if (value.conditioner === 1) {
