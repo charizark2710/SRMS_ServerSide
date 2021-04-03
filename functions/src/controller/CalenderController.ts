@@ -1,6 +1,7 @@
 import * as express from 'express';
 import { Calendar, calendarSchema } from '../model/Calendar'
 import auth from './Authenticate';
+import { userSchema } from '../model/UserModel'
 
 export default class CalendarController {
     router = express.Router();
@@ -109,6 +110,9 @@ export default class CalendarController {
             const reqFrom = parseInt(data.from);
             const reqTo = parseInt(data.to);
             let isOcc: boolean = false;
+            if(!(await userSchema.child(data.userId).get()).exists()){
+                return response.status(500).send('Sai uid');
+            }
             // const test = new Date(parseInt(data.date.slice(0, 4)), parseInt(data.date.slice(4, 6)) - 1, parseInt(data.date.slice(6, 8)));
             calendarSchema.child(data.date).on('child_added', snap => {
                 const value: Calendar = snap.val();

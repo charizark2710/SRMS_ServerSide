@@ -8,11 +8,9 @@ class notificationManagement {
     receiveMessage = () => {
         db.ref('notification/admin').on('child_added', snap => {
             const mail: message = snap.val();
-            console.log(mail);
         });
         db.ref('notification/admin').off('child_added', snap => {
             const mail: message = snap.val();
-            console.log(mail);
         });
     }
 

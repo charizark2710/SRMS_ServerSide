@@ -1,6 +1,8 @@
 import * as express from 'express';
 import { db } from "../connector/configFireBase"
 import notification from './NotificationManagement'
+import auth from './Authenticate';
+import authorized from './Authorized';
 
 export class BookRoomController {
     public router = express.Router();
@@ -10,7 +12,7 @@ export class BookRoomController {
     }
 
     init() {
-        this.router.post(this.path, this.createBookingRoom);
+        this.router.post(this.path + '/add', auth, this.createBookingRoom);
         this.router.delete(this.path + "/delete/:id", this.cancelBookingRoom);
         this.router.patch(this.path + "/acceptOrRejectBooking/:id", this.acceptOrRejectBooking);
         this.router.put(this.path + "/update", this.updateBooking);
@@ -22,9 +24,20 @@ export class BookRoomController {
     createBookingRoom = async (request: express.Request, response: express.Response) => {
         try {
             const data = request.body;
-            const date = new Date();
-            const fullDate = date.getFullYear().toString().concat(date.getMonth().toString(), date.getDate().toString(), '-', date.getHours().toString(), date.getMinutes().toString(), date.getSeconds().toString(), date.getMilliseconds().toString());
-            const id = data.userId.toString() + '_' + fullDate;//tránh trùng lịch bị overrride + dễ truy vấn khi xem chi tiết
+            const time = new Date();
+            const tempM = (time.getMonth() + 1).toString();
+            const tempD = time.getDate().toString();
+            const year = time.getFullYear().toString();
+            const month = tempM.length === 2 ? tempM : '0' + tempM;
+            const date = tempD.length === 2 ? tempD : '0' + tempD;
+            const tempH = time.getHours().toString();
+            const tempMin = time.getMinutes().toString();
+            const tempSec = time.getSeconds().toString();
+            const hours = tempH.length === 2 ? tempH : '0' + tempH;
+            const min = tempMin.length === 2 ? tempMin : '0' + tempMin;
+            const sec = tempSec.length === 2 ? tempSec : '0' + tempSec;
+            const fullTime = year.concat(month, date) + "-" + hours.concat(min, sec, '000');
+            const id = data.userId.toString() + '_' + fullTime;//tránh trùng lịch bị overrride + dễ truy vấn khi xem chi tiết
             await db.ref('Booking').child(id)
                 .set({
                     date: data.date,
@@ -34,7 +47,6 @@ export class BookRoomController {
                     reason: data.reason,
                     status: data.status,
                     userId: data.userId,
-                    id: id //to update or tracking data
                 }, async (error) => {
                     if (error) {
                         response.status(500).send(error);
@@ -44,7 +56,7 @@ export class BookRoomController {
                             message: ' sent a request to book room ' + data.roomName + ' at ' + data.date + ' from ' + data.startTime + ' to ' + data.endTime,
                             receiver: "admin",
                             sender: data.userId,
-                            sendAt: fullDate,
+                            sendAt: fullTime,
                             isRead: false,
                             typeRequest: 'bookRoomRequest',//có 3 loại, dựa vào typeRequest để truy cập đúng bảng
                             id: id,
@@ -55,7 +67,7 @@ export class BookRoomController {
                             message: 'Your request to book room ' + data.roomName + ' at ' + data.date + ' from ' + data.startTime + ' to ' + data.endTime,
                             receiver: data.userId,
                             sender: "admin",
-                            sendAt: fullDate,
+                            sendAt: fullTime,
                             isRead: false,
                             typeRequest: 'bookRoomRequest',//có 3 loại, dựa vào typeRequest để truy cập đúng bảng
                             id: id,
@@ -95,19 +107,31 @@ export class BookRoomController {
     acceptOrRejectBooking = async (request: express.Request, response: express.Response) => {
         try {
             const data = request.body;//id + status + roomName+date+time
+            const time = new Date();
+            const tempM = (time.getMonth() + 1).toString();
+            const tempD = time.getDate().toString();
+            const year = time.getFullYear().toString();
+            const month = tempM.length === 2 ? tempM : '0' + tempM;
+            const date = tempD.length === 2 ? tempD : '0' + tempD;
+            const tempH = time.getHours().toString();
+            const tempMin = time.getMinutes().toString();
+            const tempSec = time.getSeconds().toString();
+            const hours = tempH.length === 2 ? tempH : '0' + tempH;
+            const min = tempMin.length === 2 ? tempMin : '0' + tempMin;
+            const sec = tempSec.length === 2 ? tempSec : '0' + tempSec;
+            const fullTime = year.concat(month, date) + "-" + hours.concat(min, sec, '000');
             await db.ref('Booking').child(data.id).update({
                 status: data.status,
             }, async (error) => {
                 if (error) {
                     response.status(500).send(error);
                 } else {
-                    const date = new Date();
                     //send noti to user
                     notification.sendMessage({
                         message: 'Your requset to book room ' + data.roomName + ' at ' + data.date + ' ' + data.time,
                         receiver: data.id?.split('_')[0] || ' ',
-                        sender: 'admin', 
-                        sendAt: `${date.getFullYear().toString()}${date.getMonth().toString()}${date.getDate().toString()}-${date.getHours().toString()}${date.getMinutes().toString()}${date.getSeconds().toString()}${date.getMilliseconds().toString()}`,
+                        sender: 'admin',
+                        sendAt: fullTime,
                         isRead: false,
                         typeRequest: 'bookRoomRequest',//có 3 loại, dựa vào typeRequest để truy cập đúng bảng
                         id: data.id,
@@ -166,6 +190,19 @@ export class BookRoomController {
     updateBooking = async (request: express.Request, response: express.Response) => {
         try {
             const data = request.body;
+            const time = new Date();
+            const tempM = (time.getMonth() + 1).toString();
+            const tempD = time.getDate().toString();
+            const year = time.getFullYear().toString();
+            const month = tempM.length === 2 ? tempM : '0' + tempM;
+            const date = tempD.length === 2 ? tempD : '0' + tempD;
+            const tempH = time.getHours().toString();
+            const tempMin = time.getMinutes().toString();
+            const tempSec = time.getSeconds().toString();
+            const hours = tempH.length === 2 ? tempH : '0' + tempH;
+            const min = tempMin.length === 2 ? tempMin : '0' + tempMin;
+            const sec = tempSec.length === 2 ? tempSec : '0' + tempSec;
+            const fullTime = year.concat(month, date) + "-" + hours.concat(min, sec, '000');
             await db.ref('Booking').child(data.id).set({
                 date: data.date,
                 roomName: data.roomName,
@@ -184,8 +221,8 @@ export class BookRoomController {
                     notification.sendMessage({
                         message: 'Your request to book room ' + data.roomName + ' at ' + data.date + ' from ' + data.startTime + ' to ' + data.endTime,
                         receiver: data.id?.split('_')[0] || ' ',
-                        sender: 'admin', 
-                        sendAt: `${date.getFullYear().toString()}${date.getMonth().toString()}${date.getDate().toString()}-${date.getHours().toString()}${date.getMinutes().toString()}${date.getSeconds().toString()}${date.getMilliseconds().toString()}`,
+                        sender: 'admin',
+                        sendAt: fullTime,
                         isRead: false,
                         typeRequest: 'bookRoomRequest',//có 3 loại, dựa vào typeRequest để truy cập đúng bảng
                         id: data.id,
@@ -196,7 +233,7 @@ export class BookRoomController {
                         message: ' sent a request to book room ' + data.roomName + ' at ' + data.date + ' from ' + data.startTime + ' to ' + data.endTime,
                         receiver: "admin",
                         sender: data.userId,
-                        sendAt: `${date.getFullYear().toString()}${date.getMonth().toString()}${date.getDate().toString()}-${date.getHours().toString()}${date.getMinutes().toString()}${date.getSeconds().toString()}${date.getMilliseconds().toString()}`,
+                        sendAt: fullTime,
                         isRead: false,
                         typeRequest: 'bookRoomRequest',//có 3 loại, dựa vào typeRequest để truy cập đúng bảng
                         id: data.id,

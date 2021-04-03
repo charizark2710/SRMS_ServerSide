@@ -26,7 +26,6 @@ posenet.load({
 app.use(cookieParser());
 
 app.use(bodyParser.json());
-app.set('view engine', 'html');
 
 app.use((req, res, next) => {
 
@@ -61,10 +60,6 @@ process.on('SIGHUP', function () {
 });
 
 process.on('SIGINT', function (code) {
-    db.ref('video').set({
-        isDone: true,
-        frame: ""
-    });
     console.log("CTRL + C");
     process.exit();
 });
