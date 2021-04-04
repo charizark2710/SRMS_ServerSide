@@ -15,6 +15,7 @@ export default class CalendarController {
         this.router.post(this.url + '/add', auth, this.addSchedule);
         this.router.get(this.url + '/:id', auth, this.getSchedules);
         this.router.put(this.url + '/:id', auth, this.editSchedule);
+        this.router.delete(this.url + '/:id', auth, this.editSchedule);
     }
 
     viewCalendar = async (request: express.Request, response: express.Response) => {
@@ -110,7 +111,7 @@ export default class CalendarController {
             const reqFrom = parseInt(data.from);
             const reqTo = parseInt(data.to);
             let isOcc: boolean = false;
-            if(!(await userSchema.child(data.userId).get()).exists()){
+            if (!(await userSchema.child(data.userId).get()).exists()) {
                 return response.status(500).send('Sai uid');
             }
             // const test = new Date(parseInt(data.date.slice(0, 4)), parseInt(data.date.slice(4, 6)) - 1, parseInt(data.date.slice(6, 8)));
@@ -143,8 +144,18 @@ export default class CalendarController {
         try {
             const id = request.params.id;
             const data: Calendar = request.body;
-            calendarSchema.child(id).remove();
-            calendarSchema.child(id).set(data);
+            await calendarSchema.child(id).remove();
+            await calendarSchema.child(data.room + "-" + data.from + "-" + data.to).set(data);
+            response.status(200).send('ok');
+        } catch (error) {
+            response.status(500).send(error);
+        }
+    }
+
+    deleteSchedule = async (request: express.Request, response: express.Response) => {
+        try {
+            const id = request.params.id;
+            await calendarSchema.child(id).remove();
             response.status(200).send('ok');
         } catch (error) {
             response.status(500).send(error);

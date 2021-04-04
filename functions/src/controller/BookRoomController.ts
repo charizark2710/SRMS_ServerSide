@@ -33,10 +33,13 @@ export class BookRoomController {
             const tempH = time.getHours().toString();
             const tempMin = time.getMinutes().toString();
             const tempSec = time.getSeconds().toString();
+            const tempMs = time.getMilliseconds().toString();
             const hours = tempH.length === 2 ? tempH : '0' + tempH;
             const min = tempMin.length === 2 ? tempMin : '0' + tempMin;
             const sec = tempSec.length === 2 ? tempSec : '0' + tempSec;
-            const fullTime = year.concat(month, date) + "-" + hours.concat(min, sec, '000');
+            tempMs.length === 1 ? tempMs + '0' : tempMs;
+            const ms = tempMs.length === 3 ? tempMs : '0' + tempMs;
+            const fullTime = year.concat(month, date) + "-" + hours.concat(min, sec, ms);
             const id = data.userId.toString() + '_' + fullTime;//tránh trùng lịch bị overrride + dễ truy vấn khi xem chi tiết
             await db.ref('Booking').child(id)
                 .set({
