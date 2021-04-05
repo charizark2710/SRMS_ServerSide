@@ -8,6 +8,7 @@ import { RoomController } from '../controller/RoomController';
 import { BookRoom } from '../controller/BookRoom';
 import { ReportErrorController } from '../controller/ReportErrorController';
 import { BannedUserController } from '../controller/BannedUserController';
+import { RequestListController } from '../controller/RequestListController';
 
 export class Route {
     app: express.Application;
@@ -19,6 +20,7 @@ export class Route {
     bookRoom = new BookRoom();
     reportError = new ReportErrorController();
     bannedUser = new BannedUserController();
+    requestListController = new RequestListController();
     constructor(app: express.Application) {
         this.app = app;
     }
@@ -38,6 +40,7 @@ export class Route {
         this.app.use('/', this.reportError.router)
         //banned list
         this.app.use('/', this.bannedUser.router)
+        this.app.use('/', this.requestListController.router)
 
 
     }
