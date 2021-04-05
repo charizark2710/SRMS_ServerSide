@@ -71,3 +71,4 @@ node_modules/
 /functions/res/config.json
 /functions/.runtimeconfig.json
 /ffmpeg
+/functions/output.txt

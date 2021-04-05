@@ -1,5 +1,5 @@
 import * as functions from 'firebase-functions';
-import express, { NextFunction } from 'express';
+import express from 'express';
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser"
 import { Route } from './router/route'
@@ -8,15 +8,8 @@ import * as posenet from '@tensorflow-models/posenet'
 import { db } from './connector/configFireBase'
 import notification from './controller/NotificationManagement'
 import Schedule from './schedule/schedule'
-import * as io from 'socket.io'
 
 const app = express();
-
-const socketServer: io.Server = new io.Server({
-    cors: { credentials: true, allowedHeaders: "X-Requested-With,content-type", origin: 'http://localhost:3000' },
-});
-
-socketServer.listen(9001);
 
 let media: mediaServer;
 posenet.load({
@@ -25,29 +18,19 @@ posenet.load({
     multiplier: 0.75,
     quantBytes: 2,
     inputResolution: { width: 640, height: 480 }
-}).then(value => media = new mediaServer(value));
-
-socketServer.on('connection', (socket: io.Socket) => {
-    console.log((new Date()) + ' Connection accepted ' + socket.client);
-    while (!media) {
-        console.log('wait to finish');
-    }
-    socket.emit('sendNoti', 'done');
-    media.dectectMedia(socket);
-    socket.on('disconnect', function (reason) {
-        console.log((new Date()) + ' disconnect ' + reason);
-    });
+}).then(async net => {
+    media = new mediaServer(net);
+    media.dectectMedia();
 });
 
 app.use(cookieParser());
 
 app.use(bodyParser.json());
-app.set('view engine', 'html');
 
 app.use((req, res, next) => {
 
     // Website you wish to allow to connect
-    // res.setHeader('Access-Control-Allow-Origin', 'https://booming-pride-283013.web.app');
+    // res.setHeader('Access-Control-Allow-Origin', 'https://learning-5071c.web.app');
     res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
 
     // Request methods you wish to allow
@@ -72,19 +55,11 @@ const routes = new Route(app);
 routes.routers();
 
 process.on('SIGHUP', function () {
-    db.ref('video').set({
-        isDone: true,
-        frame: ""
-    });
     db.goOffline();
     process.exit();
 });
 
 process.on('SIGINT', function (code) {
-    db.ref('video').set({
-        isDone: true,
-        frame: ""
-    });
     console.log("CTRL + C");
     process.exit();
 });

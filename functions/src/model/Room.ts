@@ -1,10 +1,9 @@
-import { database } from "firebase-admin";
 import { db } from '../connector/configFireBase';
 interface Room {
     light: number,
     fan: number,
-    ground: number,
-    conditioner: number
+    conditioner: number,
+    powerPlug: number
 }
 
 const roomSchema = db.ref('room')

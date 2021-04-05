@@ -1,74 +1,92 @@
 import child_process from 'child_process';
 import { db } from '../connector/configFireBase'
-import { Image, createCanvas } from 'canvas'
+import { Canvas, Image, createCanvas } from 'canvas'
 import { testPose } from '../TensorFlow/testPose'
+import { Reference } from 'firebase-admin/node_modules/@firebase/database-types/index'
 import * as posenet from '@tensorflow-models/posenet'
-import * as io from 'socket.io'
+
 export class mediaServer {
     spawn = child_process.spawn;
     pose: testPose;
-
+    camera: Reference[];
     constructor(net: posenet.PoseNet) {
         this.pose = new testPose(net);
+        this.camera = [];
     }
 
-    async loadImage(uri: string | undefined) {
-        const image = new Image();
-        const promise = new Promise<Image>((resolve, reject) => {
-            image.onload = () => {
-                resolve(image);
-            };
-        });
-        if (uri) {
-            image.src = uri;
-            return promise;
-        }
-    }
-
-    async dectectMedia(connection: io.Socket) {
+    async dectectMedia() {
         try {
             const $this = this;
-            connection.on('sendFPS', async (message) => {
-                try {
-                    const canvas = createCanvas(480, 640);
-                    const ctx = canvas.getContext('2d');
-
-                    const image = await $this.loadImage(message) as Image;
-                    if (image) {
-                        ctx.drawImage(image, 0, 0);
-                        image.onerror = () => {
-                            throw new Error('Failed to load image');
+            this.camera.push = function (arg) {
+                const loadImage = async function (uri: string) {
+                    const image = new Image();
+                    const promise = new Promise<Image>((resolve, reject) => {
+                        image.onload = () => {
+                            resolve(image);
+                        };
+                    });
+                    image.src = uri;
+                    return promise;
+                }
+                arg.on('child_changed', async snap => {
+                    try {
+                        const val = snap.val();
+                        if (typeof val !== 'number') {
+                            const canvas = createCanvas(480, 640);
+                            const ctx = canvas.getContext('2d');
+                            const image: Image = await loadImage(val);
+                            ctx.drawImage(image, 0, 0);
+                            await $this.pose.loadAndPredict(canvas);
+                            db.ref('room/' + snap.ref.parent?.parent?.key + '/camera').set({ frame: "", isReady: 1 });
+                        } else {
+                            console.log(arg.parent?.key);
+                            console.log(val);
                         }
-                        $this.pose.loadAndPredict(canvas).then(() => {
-                            connection.emit("sendNoti", 'done');
-                        });
+                    } catch (error) {
+                        console.log(error);
                     }
-                } catch (error) {
-                    console.log(error);
+                });
+
+                arg.off('child_changed', async snap => {
+                    try {
+                        const val = snap.val();
+                        if (typeof val !== 'number') {
+                            const canvas = createCanvas(480, 640);
+                            const ctx = canvas.getContext('2d');
+                            const image: Image = await loadImage(val);
+
+                            ctx.drawImage(image, 0, 0);
+                            await $this.pose.loadAndPredict(canvas);
+                            db.ref('room/' + snap.ref.parent?.parent?.key + '/camera').set({ frame: "", isReady: 1 });
+                        } else {
+                            console.log(val);
+                        }
+                    } catch (error) {
+                        console.log(error);
+                    }
+                });
+                return Array.prototype.push.apply(this);
+            }
+
+            db.ref('room').on('child_added', async (snap) => {
+                try {
+                    const camera = snap.child('camera').ref;
+                    this.camera.push(camera);
+                } catch (e) {
+                    console.log(e);
                 }
             });
-            connection.off('message', async (message) => {
-                try {
-                    const canvas = createCanvas(480, 640);
-                    const ctx = canvas.getContext('2d');
 
-                    const image = await $this.loadImage(message) as Image;
-                    if (image) {
-                        ctx.drawImage(image, 0, 0);
-                        image.onerror = () => {
-                            throw new Error('Failed to load image');
-                        }
-                        $this.pose.loadAndPredict(canvas).then(() => {
-                            connection.emit("sendNoti", 'done');
-                        });
-                    }
-                } catch (error) {
-                    console.log(error);
+            db.ref('room').off('child_added', async (snap) => {
+                try {
+                    const camera = snap.child('camera').ref;
+                    this.camera.push(camera);
+                } catch (e) {
+                    console.log(e);
                 }
             });
         } catch (e) {
             console.error(e);
-            db.ref('video').off();
         }
     }
 }
