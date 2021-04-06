@@ -24,6 +24,7 @@ export class Login {
             let result;
             const eType = email?.split('@')[1];
             const employeeId = email?.split('@')[0];
+            let role = '';
             if ((await userSchema.child(employeeId as string).get()).exists()) {
                 if ((await (await userSchema.child(employeeId as string).get()).val() as User).banned) {
                     return response.status(403).json('may bi ban roi');
@@ -38,7 +39,7 @@ export class Login {
                     else {
                         await adminAuth.setCustomUserClaims(data.uid, { role: 'admin' });
                     }
-                    const role = (await adminAuth.getUser(data.uid)).customClaims?.role;
+                    role = (await adminAuth.getUser(data.uid)).customClaims?.role;
                     const token = 'Bearer ' + jwt.sign({ uid: data.uid, employeeId: data.employeeId, role: role, email: data.email }, functions.config().other.secret_or_publickey as string);
                     response.setHeader('Set-Cookie', cookie.serialize('token', token, {
                         httpOnly: true,
@@ -70,7 +71,7 @@ export class Login {
                             bannedAt: null
                         });
                     }
-                    const role = (await adminAuth.getUser(data.uid)).customClaims?.role;
+                    role = (await adminAuth.getUser(data.uid)).customClaims?.role;
                     const token = 'Bearer ' + jwt.sign({ uid: data.uid, employeeId: data.employeeId, role: role, email: email }, functions.config().other.secret_or_publickey as string);
                     response.setHeader('Set-Cookie', cookie.serialize('token', token, {
                         httpOnly: true,
@@ -78,7 +79,6 @@ export class Login {
                         sameSite: 'none',
                         secure: true
                     }));
-                    return response.json('ok');
                 } else if (eType === 'fe.edu.vn' || email === 'dangduchieudn99@gmail.com' || email === 'pbt.anh1999@gmail.com' || email === 'winnguyenthongminhghe@gmail.com' || email === 'thanhngo100298@gmail.com') {
                     await adminAuth.setCustomUserClaims(data.uid, { role: 'admin' });
                     result = userSchema.child(data.employeeId).set({
@@ -88,7 +88,7 @@ export class Login {
                         banned: false,
                         bannedAt: null
                     });
-                    const role = (await adminAuth.getUser(data.uid)).customClaims?.role;
+                    role = (await adminAuth.getUser(data.uid)).customClaims?.role;
                     const token = 'Bearer ' + jwt.sign({ uid: data.uid, employeeId: data.employeeId, role: role, email: data.email }, functions.config().other.secret_or_publickey as string);
                     response.setHeader('Set-Cookie', cookie.serialize('token', token, {
                         httpOnly: true,
@@ -96,10 +96,10 @@ export class Login {
                         sameSite: 'none',
                         secure: true
                     }));
-                    return response.json('ok');
                 } else {
                     return response.status(400).json({ error: "Sai Email" });
                 }
+                return response.json({ role: role });
             }
         } catch (e) {
             console.log(e);
