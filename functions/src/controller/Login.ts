@@ -28,6 +28,16 @@ export class Login {
                 if ((await (await userSchema.child(employeeId as string).get()).val() as User).banned) {
                     return response.status(403).json('may bi ban roi');
                 } else {
+                    if (eType === 'fpt.edu.vn') {
+                        const idNum = email?.match('/[a-zA-Z]+|[0-9]+(?:\.[0-9]+)?|\.[0-9]+/g')?.toString();
+                        if (idNum?.length! >= 4)
+                            await adminAuth.setCustomUserClaims(data.uid, { role: 'student' });
+                        else
+                            await adminAuth.setCustomUserClaims(data.uid, { role: 'lecture' });
+                    }
+                    else {
+                        await adminAuth.setCustomUserClaims(data.uid, { role: 'admin' });
+                    }
                     const role = (await adminAuth.getUser(data.uid)).customClaims?.role;
                     const token = 'Bearer ' + jwt.sign({ uid: data.uid, employeeId: data.employeeId, role: role, email: data.email }, functions.config().other.secret_or_publickey as string);
                     response.setHeader('Set-Cookie', cookie.serialize('token', token, {
@@ -69,7 +79,7 @@ export class Login {
                         secure: true
                     }));
                     return response.json('ok');
-                } else if (eType === 'fe.edu.vn' || email === 'dangduchieudn99@gmail.com') {
+                } else if (eType === 'fe.edu.vn' || email === 'dangduchieudn99@gmail.com' || email === 'pbt.anh1999@gmail.com' || email === 'winnguyenthongminhghe@gmail.com' || email === 'thanhngo100298@gmail.com') {
                     await adminAuth.setCustomUserClaims(data.uid, { role: 'admin' });
                     result = userSchema.child(data.employeeId).set({
                         email: email!,

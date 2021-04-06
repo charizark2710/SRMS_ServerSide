@@ -79,7 +79,9 @@ export class RoomController {
             totalFan: 0,
             onConditioner: 0,
             totalConditioner: 0,
-        }
+            onPowerPlug: 0,
+            totalPowerPlug: 0,
+        };
         try {
             (await roomSchema.get()).forEach(snapshot => {
                 const value: Room = snapshot.val().device;
@@ -87,6 +89,12 @@ export class RoomController {
                     devices.totalConditioner++;
                     if (value.conditioner === 1) {
                         devices.onConditioner++;
+                    }
+                }
+                if (value.powerPlug === 1 || value.powerPlug === 0) {
+                    devices.totalPowerPlug++;
+                    if (value.powerPlug === 1) {
+                        devices.onPowerPlug++;
                     }
                 }
                 if (value.fan === 1 || value.fan === 0) {

@@ -30,7 +30,7 @@ function roomPermission() {
                     res.locals = { ...res.locals, room: room };
                     return next();
                 }
-                return res.status(403).send('may khong vo duoc phong nay');
+                return res.status(403).json({ permissonErr: 'may khong vo duoc phong nay' });
             } catch (error) {
                 return res.send(error);
             }

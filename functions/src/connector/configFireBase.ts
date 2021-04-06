@@ -1,6 +1,5 @@
 import * as functions from 'firebase-functions';
 import admin from "firebase-admin";
-
 const adminstrator = admin.initializeApp({
     credential: admin.credential.cert({
         privateKey: functions.config().service.private_key.replace(/\\n/g, '\n'),

@@ -3,6 +3,7 @@ import { db } from "../connector/configFireBase"
 import notification from './NotificationManagement'
 import auth from './Authenticate';
 import authorized from './Authorized';
+import { fullDay } from '../schedule/scheduleBuffer';
 
 export class BookRoomController {
     public router = express.Router();
@@ -24,6 +25,8 @@ export class BookRoomController {
     createBookingRoom = async (request: express.Request, response: express.Response) => {
         try {
             const data = request.body;
+
+            //tạo ID
             const time = new Date();
             const tempM = (time.getMonth() + 1).toString();
             const tempD = time.getDate().toString();
@@ -40,13 +43,25 @@ export class BookRoomController {
             tempMs.length === 1 ? tempMs + '0' : tempMs;
             const ms = tempMs.length === 3 ? tempMs : '0' + tempMs;
             const fullTime = year.concat(month, date) + "-" + hours.concat(min, sec, ms);
-            const id = data.userId.toString() + '_' + fullTime;//tránh trùng lịch bị overrride + dễ truy vấn khi xem chi tiết
+            const id = data.userId.toString() + '-' + fullTime;//tránh trùng lịch bị overrride + dễ truy vấn khi xem chi tiết
+
+            //format lại ngày, thời gian bắt đầu, kết thúc theo lịch đặt của user
+            const bookingTime = data.date;
+            const startTime = data.startTime;
+            const endTime = data.endTime;
+            const tempFullDate=bookingTime.split("-");
+            const fullDate=tempFullDate[0]+tempFullDate[1]+tempFullDate[2];
+            const tempStartTime=startTime.split(":");
+            const fullStartTime=tempStartTime[0]+tempStartTime[1]+"00000";
+            const tempEndTime=endTime.split(":");
+            const fullEndTime=tempEndTime[0]+tempEndTime[1]+"00000";
+
             await db.ref('Booking').child(id)
                 .set({
-                    date: data.date,
+                    date: fullDate,
                     roomName: data.roomName,
-                    startTime: data.startTime,
-                    endTime: data.endTime,
+                    startTime: fullStartTime,
+                    endTime: fullEndTime,
                     reason: data.reason,
                     status: data.status,
                     userId: data.userId,
@@ -130,16 +145,8 @@ export class BookRoomController {
                     response.status(500).send(error);
                 } else {
                     //send noti to user
-                    notification.sendMessage({
-                        message: 'Your requset to book room ' + data.roomName + ' at ' + data.date + ' ' + data.time,
-                        receiver: data.id?.split('_')[0] || ' ',
-                        sender: 'admin',
-                        sendAt: fullTime,
-                        isRead: false,
-                        typeRequest: 'bookRoomRequest',//có 3 loại, dựa vào typeRequest để truy cập đúng bảng
-                        id: data.id,
-                        status: data.status
-                    });
+                    notification.updateAdminApprovalStatus(data.id, data.status, data.id?.split('-')[0] || ' ',fullTime);
+
                 }
             });
             return response.status(200).json('ok');
@@ -151,7 +158,7 @@ export class BookRoomController {
     cancelBookingRoom = async (request: express.Request, response: express.Response) => {
         try {
             const bookingId = request.params.id;
-            const userId = bookingId?.split('_')[0] || ' ';
+            const userId = bookingId?.split('-')[0] || ' ';
             //xóa trong booking, xóa hết noti
             await db.ref('Booking').child(bookingId).remove()
                 .then(function () {
@@ -206,11 +213,23 @@ export class BookRoomController {
             const min = tempMin.length === 2 ? tempMin : '0' + tempMin;
             const sec = tempSec.length === 2 ? tempSec : '0' + tempSec;
             const fullTime = year.concat(month, date) + "-" + hours.concat(min, sec, '000');
+
+            //format lại ngày, thời gian bắt đầu, kết thúc theo lịch đặt của user
+            const bookingTime = data.date;
+            const startTime = data.startTime;
+            const endTime = data.endTime;
+            const tempFullDate=bookingTime.split("-");
+            const fullDate=tempFullDate[0]+tempFullDate[1]+tempFullDate[2];
+            const tempStartTime=startTime.split(":");
+            const fullStartTime=tempStartTime[0]+tempStartTime[1]+"00000";
+            const tempEndTime=endTime.split(":");
+            const fullEndTime=tempEndTime[0]+tempEndTime[1]+"00000";
+
             await db.ref('Booking').child(data.id).set({
-                date: data.date,
+                date: fullDate,
                 roomName: data.roomName,
-                startTime: data.startTime,
-                endTime: data.endTime,
+                startTime: fullStartTime,
+                endTime: fullEndTime,
                 reason: data.reason,
                 status: data.status,
                 userId: data.userId,
@@ -223,7 +242,7 @@ export class BookRoomController {
                     //send noti to user
                     notification.sendMessage({
                         message: 'Your request to book room ' + data.roomName + ' at ' + data.date + ' from ' + data.startTime + ' to ' + data.endTime,
-                        receiver: data.id?.split('_')[0] || ' ',
+                        receiver: data.id?.split('-')[0] || ' ',
                         sender: 'admin',
                         sendAt: fullTime,
                         isRead: false,
