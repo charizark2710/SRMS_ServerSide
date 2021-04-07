@@ -238,7 +238,6 @@ export class BookRoomController {
                 if (error) {
                     response.status(500).send(error);
                 } else {
-                    const date = new Date()
                     //send noti to user
                     notification.sendMessage({
                         message: 'Your request to book room ' + data.roomName + ' at ' + data.date + ' from ' + data.startTime + ' to ' + data.endTime,

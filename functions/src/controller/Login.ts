@@ -1,4 +1,4 @@
-import e, * as express from 'express';
+import * as express from 'express';
 import { userSchema, User } from "../model/UserModel";
 import { adminAuth, db } from "../connector/configFireBase"
 import cookie from "cookie"

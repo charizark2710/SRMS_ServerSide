@@ -33,14 +33,14 @@ export default class CalendarController {
                 if (selectedRooms) {
                     const rooms = selectedRooms.toString().split(',');
                     snaps.forEach(snap => {
-                        result.push((Object.values(snap.val()) as any[]).filter(val => {
-                            return (rooms.includes(val.room) && val.userId === userId)
+                        result.push((Object.values(snap.val())).filter(val => {
+                            return (rooms.includes((val as Calendar).room) && (val as Calendar).userId === userId)
                         }));
                     });
                 } else {
                     snaps.forEach(snap => {
-                        result.push((Object.values(snap.val()) as any[]).filter(val => {
-                            return (val.userId === userId)
+                        result.push((Object.values(snap.val())).filter(val => {
+                            return ((val as Calendar).userId === userId)
                         }));
                     });
                 }
@@ -50,8 +50,8 @@ export default class CalendarController {
                 if (selectedRooms) {
                     const rooms = selectedRooms.toString().split(',');
                     snaps.forEach(snap => {
-                        result.push((Object.values(snap.val()) as any[]).filter(val => {
-                            return (rooms.includes(val.room))
+                        result.push((Object.values(snap.val())).filter(val => {
+                            return (rooms.includes((val as Calendar).room))
                         }));
                     });
                 } else {
@@ -67,17 +67,17 @@ export default class CalendarController {
                     const rooms = selectedRooms.toString().split(',');
                     calendarSchema.on('child_added', async snap => {
                         const vals = snap.val();
-                        (Object.values(vals) as any[]).forEach(val => {
-                            if (rooms.includes(val.room) && val.userId === userId) {
+                        (Object.values(vals)).forEach(val => {
+                            if (rooms.includes((val as Calendar).room) && (val as Calendar).userId === userId) {
                                 result.push(val);
                             }
                         });
                     });
                 } else {
                     calendarSchema.on('child_added', async snap => {
-                        const vals = Object.values(snap.val()) as any[];
+                        const vals = Object.values(snap.val());
                         vals.forEach(val => {
-                            if (val.userId === userId) {
+                            if ((val as Calendar).userId === userId) {
                                 result.push(val);
                             }
                         });
@@ -89,15 +89,15 @@ export default class CalendarController {
                     const rooms = selectedRooms.toString().split(',');
                     calendarSchema.on('child_added', async snap => {
                         const vals = snap.val();
-                        (Object.values(vals) as any[]).forEach(val => {
-                            if (rooms.includes(val.room)) {
+                        (Object.values(vals)).forEach(val => {
+                            if (rooms.includes((val as Calendar).room)) {
                                 result.push(val);
                             }
                         });
                     });
                 } else {
                     await calendarSchema.once('value', async snap => {
-                        Object.values(snap.val()).forEach(val => result.push(Object.values(val as any)));
+                        Object.values(snap.val()).forEach(val => result.push(Object.values(val as Calendar)));
                     });
                 }
             }

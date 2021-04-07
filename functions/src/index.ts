@@ -30,8 +30,13 @@ app.use(bodyParser.json());
 app.use((req, res, next) => {
 
     // Website you wish to allow to connect
-    // res.setHeader('Access-Control-Allow-Origin', 'https://learning-5071c.web.app');
-    res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+    const allowOrigin = ['https://learning-5071c.web.app', 'http://localhost:3000'];
+    const origin = req.headers.origin;
+    if(allowOrigin.includes(origin as string)){
+        // res.setHeader('Access-Control-Allow-Origin', 'https://learning-5071c.web.app');
+        res.setHeader('Access-Control-Allow-Origin', origin as string);
+    }
+    // res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
 
     // Request methods you wish to allow
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
