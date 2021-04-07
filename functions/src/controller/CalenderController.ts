@@ -25,7 +25,7 @@ export default class CalendarController {
         const result: any[] = [];
         if (selectedDate) {
             const dates = selectedDate.toString().split(',');
-            const promise = dates.map(date => { return calendarSchema.child(date).once('value', snap => snap) });
+            const promise = dates.map(date => { return calendarSchema.child(date).orderByChild('isDone').equalTo(false).once('value', snap => snap) });
             const snaps = await Promise.all(promise);
             //Chỉ hiện các sự kiện của người dùng hiện tại
             if (isCurrentUser?.toString() === '1') {
@@ -34,13 +34,13 @@ export default class CalendarController {
                     const rooms = selectedRooms.toString().split(',');
                     snaps.forEach(snap => {
                         result.push((Object.values(snap.val())).filter(val => {
-                            return (!(val as Calendar).isDone && rooms.includes((val as Calendar).room) && (val as Calendar).userId === userId)
+                            return (rooms.includes((val as Calendar).room) && (val as Calendar).userId === userId)
                         }));
                     });
                 } else {
                     snaps.forEach(snap => {
                         result.push((Object.values(snap.val())).filter(val => {
-                            return (!(val as Calendar).isDone && (val as Calendar).userId === userId)
+                            return ((val as Calendar).userId === userId)
                         }));
                     });
                 }
@@ -51,12 +51,12 @@ export default class CalendarController {
                     const rooms = selectedRooms.toString().split(',');
                     snaps.forEach(snap => {
                         result.push((Object.values(snap.val())).filter(val => {
-                            return (!(val as Calendar).isDone && rooms.includes((val as Calendar).room))
+                            return (rooms.includes((val as Calendar).room))
                         }));
                     });
                 } else {
                     snaps.forEach(snap => {
-                        !(snap.val() as Calendar).isDone ? result.push(Object.values(snap.val())) : '';
+                        result.push(Object.values(snap.val()));
                     });
                 }
             }
@@ -97,7 +97,11 @@ export default class CalendarController {
                     });
                 } else {
                     await calendarSchema.once('value', async snap => {
-                        Object.values(snap.val()).forEach(val => result.push(Object.values(val as Calendar)));
+                        Object.values(snap.val()).forEach(val => {
+                            if (!(val as Calendar).isDone) {
+                                result.push(Object.values(val as Calendar));
+                            }
+                        });
                     });
                 }
             }
@@ -130,6 +134,7 @@ export default class CalendarController {
                 }
             });
             if (!isOcc) {
+                data.isDone = false;
                 calendarSchema.child(data.date).child(data.room.concat('-', data.from, '-', data.to)).set(data);
                 response.status(200).send('ok');
             } else {
