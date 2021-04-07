@@ -6,6 +6,7 @@ interface User {
     banned: boolean;
     bannedAt: Date | undefined;
     uid: string;
+    role: string;
 }
 
 const userSchema = db.ref('users')

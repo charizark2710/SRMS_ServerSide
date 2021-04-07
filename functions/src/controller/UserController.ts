@@ -1,4 +1,4 @@
-import { userSchema } from '../model/UserModel'
+import { userSchema, User } from '../model/UserModel'
 import * as express from 'express';
 import { adminAuth } from "../connector/configFireBase"
 import auth from './Authenticate';
@@ -78,13 +78,12 @@ export class UserController {
     banUser = (request: express.Request, response: express.Response) => {
         try {
             var data = request.body;//list banning users
-            data = JSON.parse(data);
             const result: any[] = []
 
             if (data) {
-
                 data.forEach(async (user: any) => {
-                    var userId = user.split('@')[0] || ' ';
+                    const userObj: User = JSON.parse(user);
+                    var userId = userObj.email.split('@')[0] || ' ';
                     var bannedAt = (new Date()).toString();
 
                     await userSchema.child(userId).update({
@@ -92,7 +91,7 @@ export class UserController {
                         bannedAt: bannedAt
                     })
                     await userSchema.child(userId).get().then(function (snapshot) {
-                        var value = snapshot.val();
+                        const value: User = snapshot.val();
                         result.push({
                             email: value.email,
                             role: value.role,
@@ -114,8 +113,11 @@ export class UserController {
     }
     unbanUser = async (request: express.Request, response: express.Response) => {
         try {
-            var data = request.body;//list banning users
-            var userId = data.split('@')[0] || ' ';
+            var data = request.query.id as string;
+            var userId="";
+            if(data){
+                userId = data.split('@')[0] ;
+            }
             await userSchema.child(userId).update({
                 banned: false,
                 bannedAt: null,

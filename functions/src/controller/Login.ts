@@ -59,7 +59,8 @@ export class Login {
                             name: data.name!,
                             banned: false,
                             uid: data.uid!,
-                            bannedAt: null
+                            bannedAt: null,
+                            role: role
                         });
                     } else {
                         await adminAuth.setCustomUserClaims(data.uid, { role: 'lecture' });
@@ -68,7 +69,8 @@ export class Login {
                             name: data.name!,
                             uid: data.uid!,
                             banned: false,
-                            bannedAt: null
+                            bannedAt: null,
+                            role: role
                         });
                     }
                     role = (await adminAuth.getUser(data.uid)).customClaims?.role;
@@ -86,7 +88,8 @@ export class Login {
                         name: data.name!,
                         uid: data.uid!,
                         banned: false,
-                        bannedAt: null
+                        bannedAt: null,
+                        role: role
                     });
                     role = (await adminAuth.getUser(data.uid)).customClaims?.role;
                     const token = 'Bearer ' + jwt.sign({ uid: data.uid, employeeId: data.employeeId, role: role, email: data.email }, functions.config().other.secret_or_publickey as string);
