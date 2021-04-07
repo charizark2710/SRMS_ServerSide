@@ -34,13 +34,13 @@ export default class CalendarController {
                     const rooms = selectedRooms.toString().split(',');
                     snaps.forEach(snap => {
                         result.push((Object.values(snap.val())).filter(val => {
-                            return (rooms.includes((val as Calendar).room) && (val as Calendar).userId === userId)
+                            return (!(val as Calendar).isDone && rooms.includes((val as Calendar).room) && (val as Calendar).userId === userId)
                         }));
                     });
                 } else {
                     snaps.forEach(snap => {
                         result.push((Object.values(snap.val())).filter(val => {
-                            return ((val as Calendar).userId === userId)
+                            return (!(val as Calendar).isDone && (val as Calendar).userId === userId)
                         }));
                     });
                 }
@@ -51,12 +51,12 @@ export default class CalendarController {
                     const rooms = selectedRooms.toString().split(',');
                     snaps.forEach(snap => {
                         result.push((Object.values(snap.val())).filter(val => {
-                            return (rooms.includes((val as Calendar).room))
+                            return (!(val as Calendar).isDone && rooms.includes((val as Calendar).room))
                         }));
                     });
                 } else {
                     snaps.forEach(snap => {
-                        result.push(Object.values(snap.val()));
+                        !(snap.val() as Calendar).isDone ? result.push(Object.values(snap.val())) : '';
                     });
                 }
             }
@@ -68,7 +68,7 @@ export default class CalendarController {
                     calendarSchema.on('child_added', async snap => {
                         const vals = snap.val();
                         (Object.values(vals)).forEach(val => {
-                            if (rooms.includes((val as Calendar).room) && (val as Calendar).userId === userId) {
+                            if (!(val as Calendar).isDone && rooms.includes((val as Calendar).room) && (val as Calendar).userId === userId) {
                                 result.push(val);
                             }
                         });
@@ -77,7 +77,7 @@ export default class CalendarController {
                     calendarSchema.on('child_added', async snap => {
                         const vals = Object.values(snap.val());
                         vals.forEach(val => {
-                            if ((val as Calendar).userId === userId) {
+                            if (!(val as Calendar).isDone && (val as Calendar).userId === userId) {
                                 result.push(val);
                             }
                         });
@@ -90,7 +90,7 @@ export default class CalendarController {
                     calendarSchema.on('child_added', async snap => {
                         const vals = snap.val();
                         (Object.values(vals)).forEach(val => {
-                            if (rooms.includes((val as Calendar).room)) {
+                            if (!(val as Calendar).isDone && rooms.includes((val as Calendar).room)) {
                                 result.push(val);
                             }
                         });
@@ -119,7 +119,7 @@ export default class CalendarController {
                 const value: Calendar = snap.val();
                 const from = parseInt(value.from);
                 const to = parseInt(value.to);
-                if (value.date === data.date && value.room === data.room) {
+                if (!value.isDone && value.date === data.date && value.room === data.room) {
                     if (reqFrom === from || reqTo === to) {
                         isOcc = true;
                     } else if (reqFrom > from && reqFrom < to) {
@@ -144,7 +144,7 @@ export default class CalendarController {
         try {
             const id = request.params.id;
             const data: Calendar = request.body;
-            await calendarSchema.child(id).remove();
+            await calendarSchema.child(id).update({ isDone: true });
             await calendarSchema.child(data.room + "-" + data.from + "-" + data.to).set(data);
             response.status(200).send('ok');
         } catch (error) {
@@ -155,7 +155,7 @@ export default class CalendarController {
     deleteSchedule = async (request: express.Request, response: express.Response) => {
         try {
             const id = request.params.id;
-            await calendarSchema.child(id).remove();
+            await calendarSchema.child(id).update({ isDone: true });
             response.status(200).send('ok');
         } catch (error) {
             response.status(500).send(error);
@@ -165,8 +165,8 @@ export default class CalendarController {
     getSchedules = async (request: express.Request, response: express.Response) => {
         try {
             const id = request.params.id;
-            const result = (await calendarSchema.child(id).get()).val();
-            response.status(200).json(result);
+            const result = (await calendarSchema.child(id).get()).val() as Calendar;
+            !result.isDone ? response.status(200).json(result) : response.status(400).json({ error: "da xoa roi" });
         } catch (error) {
             response.status(500).send(error);
         }

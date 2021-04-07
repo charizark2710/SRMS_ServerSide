@@ -8,6 +8,7 @@ interface Calendar {
     reason: string,
     from: string,
     to: string,
+    isDone?: boolean
 }
 
 const calendarSchema = db.ref('calendar');

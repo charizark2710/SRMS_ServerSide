@@ -76,9 +76,7 @@ export class BookRoomController {
                             sender: data.userId,
                             sendAt: fullTime,
                             isRead: false,
-                            typeRequest: 'bookRoomRequest',//có 3 loại, dựa vào typeRequest để truy cập đúng bảng
                             id: id,
-                            status: data.status
                         });
                         //gửi cho chính user đặt phòng
                         notification.sendMessage({
