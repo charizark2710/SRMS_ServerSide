@@ -119,17 +119,17 @@ export default class CalendarController {
                 return response.status(500).send('Sai uid');
             }
             // const test = new Date(parseInt(data.date.slice(0, 4)), parseInt(data.date.slice(4, 6)) - 1, parseInt(data.date.slice(6, 8)));
-            calendarSchema.child(data.date).on('child_added', snap => {
+            isOcc = (await calendarSchema.child(data.date).orderByChild('isDone').equalTo(false).get()).forEach(snap => {
                 const value: Calendar = snap.val();
                 const from = parseInt(value.from);
                 const to = parseInt(value.to);
-                if (!value.isDone && value.date === data.date && value.room === data.room) {
+                if (value.date === data.date && value.room === data.room) {
                     if (reqFrom === from || reqTo === to) {
-                        isOcc = true;
+                        return true;
                     } else if (reqFrom > from && reqFrom < to) {
-                        isOcc = true;
+                        return true;
                     } else if (reqTo > from && reqTo < to) {
-                        isOcc = true;
+                        return true;
                     }
                 }
             });

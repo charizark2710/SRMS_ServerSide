@@ -17,14 +17,27 @@ export class RoomController {
         this.router.get(this.path + "/countNumberTurnOnDevices", auth, roomPermission(), this.countNumberTurnOnDevices);
     }
 
+    async updateReport(room: string, device: string, status: number) {
+        const deviceObj: any = {};
+        if (status === 1) {
+            const date = new Date();
+            deviceObj[device] = date.getTime();
+            roomSchema.child(room).child('report').update(deviceObj);
+        } else {
+            (await roomSchema.child(room).child('report').get()).val();
+        }
+    }
+
     //nhận về room, type và trạng thái device
     //dựa vào room và type device, update trạng thái
     switchDeviceStatus = async (request: express.Request, response: express.Response) => {
         try {
             const data = request.body;
             const room = response.locals.room;
+            const devices: Room = data.device;
             if (data.roomName === room || response.locals.role === 'admin') {
-                await roomSchema.child(data.roomName).child('device').update(data.device);
+                await roomSchema.child(data.roomName).child('device').update(devices);
+
                 return response.send("ok");
             } else {
                 response.status(403).send(`may khong duoc dung phong ${data.roomName}`);
@@ -40,8 +53,8 @@ export class RoomController {
             const room = response.locals.room;
             const status = parseInt(request.query.q as string);
             if (reqRoom === room || response.locals.role === 'admin') {
-                const device: Room = { conditioner: status, fan: status, light: status, powerPlug: status };
-                await roomSchema.child(reqRoom).child('device').set(device);
+                const devices: Room = { conditioner: status, fan: status, light: status, powerPlug: status };
+                await roomSchema.child(reqRoom).child('device').set(devices);
                 return response.send("ok");
             } else {
                 response.status(403).send(`may khong duoc dung phong ${reqRoom}`);

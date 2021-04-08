@@ -66,18 +66,9 @@ export class mediaServer {
                     }
                 });
                 return Array.prototype.push.apply(this);
-            }
+            };
 
-            db.ref('room').on('child_added', async (snap) => {
-                try {
-                    const camera = snap.child('camera').ref;
-                    this.camera.push(camera);
-                } catch (e) {
-                    console.log(e);
-                }
-            });
-
-            db.ref('room').off('child_added', async (snap) => {
+            (await db.ref('room').get()).forEach(snap => {
                 try {
                     const camera = snap.child('camera').ref;
                     this.camera.push(camera);
