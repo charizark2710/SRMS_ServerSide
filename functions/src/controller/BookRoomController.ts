@@ -14,8 +14,8 @@ export class BookRoomController {
 
     init() {
         this.router.post(this.path + '/add', auth, this.createBookingRoom);
-        this.router.delete(this.path + "/delete/:id", this.cancelBookingRoom);
-        this.router.patch(this.path + "/acceptOrRejectBooking/:id", this.acceptOrRejectBooking);
+        this.router.patch(this.path + "/delete/:id", this.cancelBookingRoom);
+        this.router.patch(this.path + "/acceptOrRejectBooking", this.acceptOrRejectBooking);
         this.router.put(this.path + "/update", this.updateBooking);
         this.router.get(this.path + '/:id', this.viewDetailBookingRoom);
         this.router.get(this.path + '/edit/:id', this.getBookingById);
@@ -77,17 +77,16 @@ export class BookRoomController {
                             sendAt: fullTime,
                             isRead: false,
                             id: id,
+                            url:"/bookRoomRequest/"+id
                         });
                         //gửi cho chính user đặt phòng
                         notification.sendMessage({
-                            message: 'Your request to book room ' + data.roomName + ' at ' + data.date + ' from ' + data.startTime + ' to ' + data.endTime,
+                            message: 'Sending request to book room ' + data.roomName + ' at ' + data.date + ' ' + data.startTime + '-' + data.endTime +" successfully",
                             receiver: data.userId,
                             sender: "admin",
                             sendAt: fullTime,
                             isRead: false,
-                            typeRequest: 'bookRoomRequest',//có 3 loại, dựa vào typeRequest để truy cập đúng bảng
                             id: id,
-                            status: data.status
                         });
                     }
                 });
@@ -136,6 +135,7 @@ export class BookRoomController {
             const min = tempMin.length === 2 ? tempMin : '0' + tempMin;
             const sec = tempSec.length === 2 ? tempSec : '0' + tempSec;
             const fullTime = year.concat(month, date) + "-" + hours.concat(min, sec, '000');
+            const id = data.userId.toString() + '-' + fullTime;
             await db.ref('Booking').child(data.id).update({
                 status: data.status,
             }, async (error) => {
@@ -143,7 +143,14 @@ export class BookRoomController {
                     response.status(500).send(error);
                 } else {
                     //send noti to user
-                    notification.updateAdminApprovalStatus(data.id, data.status, data.id?.split('-')[0] || ' ',fullTime);
+                    notification.sendMessage({
+                        message: 'Your request to book room ' + data.roomName + ' at ' + data.date + ' ' + data.time +" has been "+data.status,
+                        receiver: data.userId,
+                        sender: "admin",
+                        sendAt: fullTime,
+                        isRead: false,
+                        id: id,
+                    });
 
                 }
             });
@@ -156,14 +163,49 @@ export class BookRoomController {
     cancelBookingRoom = async (request: express.Request, response: express.Response) => {
         try {
             const bookingId = request.params.id;
+            const message=request.query.message;
             const userId = bookingId?.split('-')[0] || ' ';
-            //xóa trong booking, xóa hết noti
-            await db.ref('Booking').child(bookingId).remove()
-                .then(function () {
-                    //xoa noti user
-                    db.ref('notification').child(userId).child(bookingId.toString()).remove();
-                    //xoa noti admin
-                    db.ref('notification').child('admin').child(bookingId.toString()).remove();
+
+            const time = new Date();
+            const tempM = (time.getMonth() + 1).toString();
+            const tempD = time.getDate().toString();
+            const year = time.getFullYear().toString();
+            const month = tempM.length === 2 ? tempM : '0' + tempM;
+            const date = tempD.length === 2 ? tempD : '0' + tempD;
+            const tempH = time.getHours().toString();
+            const tempMin = time.getMinutes().toString();
+            const tempSec = time.getSeconds().toString();
+            const hours = tempH.length === 2 ? tempH : '0' + tempH;
+            const min = tempMin.length === 2 ? tempMin : '0' + tempMin;
+            const sec = tempSec.length === 2 ? tempSec : '0' + tempSec;
+            const fullTime = year.concat(month, date) + "-" + hours.concat(min, sec, '000');
+            const id = userId.toString() + '-' + fullTime;
+
+            
+           
+            await db.ref('Booking').child(bookingId).update({
+                status: "deleted"
+            }).then(function () {
+                    //gửi cho admin
+                    notification.sendMessage({
+                        message: ' deleted ' + message,
+                        receiver: "admin",
+                        sender: userId,
+                        sendAt: fullTime,
+                        isRead: false,
+                        id: id,
+                        url:"/bookRoomRequest/"+bookingId
+                    });
+                    //gửi cho chính user đặt phòng
+                    notification.sendMessage({
+                        message: 'You deleted ' + message +" successfully",
+                        receiver: userId,
+                        sender: "admin",
+                        sendAt: fullTime,
+                        isRead: false,
+                        id: id,
+                    });
+
                 })
                 .catch(function (error) {
                     console.log("Remove failed: " + error.message)
@@ -222,41 +264,36 @@ export class BookRoomController {
             const fullStartTime=tempStartTime[0]+tempStartTime[1]+"00000";
             const tempEndTime=endTime.split(":");
             const fullEndTime=tempEndTime[0]+tempEndTime[1]+"00000";
+            const id = data.id?.split('-')[0].toString() + '-' + fullTime;
 
-            await db.ref('Booking').child(data.id).set({
+            await db.ref('Booking').child(data.id).update({
                 date: fullDate,
                 roomName: data.roomName,
                 startTime: fullStartTime,
                 endTime: fullEndTime,
                 reason: data.reason,
-                status: data.status,
-                userId: data.userId,
-                id: data.id //to update or tracking data
             }, (error) => {
                 if (error) {
                     response.status(500).send(error);
                 } else {
-                    //send noti to user
-                    notification.sendMessage({
-                        message: 'Your request to book room ' + data.roomName + ' at ' + data.date + ' from ' + data.startTime + ' to ' + data.endTime,
-                        receiver: data.id?.split('-')[0] || ' ',
-                        sender: 'admin',
-                        sendAt: fullTime,
-                        isRead: false,
-                        typeRequest: 'bookRoomRequest',//có 3 loại, dựa vào typeRequest để truy cập đúng bảng
-                        id: data.id,
-                        status: data.status
-                    });
                     //gửi cho admin
                     notification.sendMessage({
-                        message: ' sent a request to book room ' + data.roomName + ' at ' + data.date + ' from ' + data.startTime + ' to ' + data.endTime,
+                        message: ' changed a book room request to room ' + data.roomName + ' at ' + data.date + ' ' + data.startTime + '-' + data.endTime,
                         receiver: "admin",
-                        sender: data.userId,
+                        sender: data.id?.split('-')[0] || ' ',
                         sendAt: fullTime,
                         isRead: false,
-                        typeRequest: 'bookRoomRequest',//có 3 loại, dựa vào typeRequest để truy cập đúng bảng
-                        id: data.id,
-                        status: data.status
+                        id: id,
+                        url:"/bookRoomRequest/"+data.id
+                    });
+                    //gửi cho chính user đặt phòng
+                    notification.sendMessage({
+                        message: 'You changed a book room request to room ' + data.roomName + ' at ' + data.date + ' ' + data.startTime + '-' + data.endTime,
+                        receiver: data.id?.split('-')[0] || ' ',
+                        sender: "admin",
+                        sendAt: fullTime,
+                        isRead: false,
+                        id: id,
                     });
                 }
             });
