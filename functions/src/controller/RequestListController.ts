@@ -16,6 +16,7 @@ export class RequestListController {
     init() {
         // this.router.patch(this.path + "/banned/:id/restore", auth, authorized({ hasRole: ['admin', 'student', 'lecture'] }), this.restoreRoom);
         this.router.get(this.path, auth, this.getRequestList);
+        this.router.get(this.path + "/:currentUser", auth, this.getHistoryRequestForUser);
         this.router.delete(this.path + '/delete/:ids', auth, this.deleteRequestList);
     }
 
@@ -51,4 +52,64 @@ export class RequestListController {
         }
     }
 
+
+    getHistoryRequestForUser = async (request: express.Request, response: express.Response) => {
+        try {
+            let result: any[] = [];
+            const currentUser = request.params.currentUser;
+            (await db.ref("Booking").orderByKey().startAt(currentUser).get()).forEach(snapshot => {
+
+                const key = snapshot.key;
+                const value = snapshot.val();
+                if (value.status !== "deleted") {
+                    //format date
+                    let year = value.date?.substring(0, 4);
+                    let month = value.date?.substring(4, 6);
+                    let day = value.date?.substring(6);
+                    let formatedDate = year + "-" + month + "-" + day;
+
+                    //format time
+                    let sHour = value.startTime?.substring(0, 2);
+                    let sMinus = value.startTime?.substring(2, 4);
+                    let sSencond = value.startTime?.substring(4, 6);
+                    let formatedStartTime = sHour + ":" + sMinus + ":" + sSencond;
+
+                    let eHour = value.startTime?.substring(0, 2);
+                    let eMinus = value.startTime?.substring(2, 4);
+                    let eSencond = value.startTime?.substring(4, 6);
+                    let formatedEndTime = eHour + ":" + eMinus + ":" + eSencond;
+
+                    const bookingReq = {
+                        id: key,
+                        title: "request to book room " + value.roomName + " at " + formatedDate + " " + formatedStartTime + "-" + formatedEndTime,
+                        requestType: "bookRoomRequest",
+                        requestTime: key,
+                        status: value.status
+                    }
+                    result.push(bookingReq);
+                }
+
+            });
+
+            (await db.ref("ReportError").orderByKey().startAt(currentUser).get()).forEach(snapshot => {
+
+                const key = snapshot.key;
+                const value = snapshot.val();
+                if(value.status!=="deleted"){
+                    const bookingReq = {
+                        id: key,
+                        title: "request to report error at room " + value.roomName,
+                        requestType: "reportErrorRequest",
+                        requestTime: key,
+                        status: value.status
+                    }
+                    result.push(bookingReq);
+                }
+            })
+
+            response.status(200).json(result);
+        } catch (error) {
+            response.status(500).send(error);
+        }
+    }
 }
