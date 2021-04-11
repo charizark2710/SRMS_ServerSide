@@ -28,6 +28,7 @@ export class Route {
         this.app.get('/', auth, (req, res) => {
             res.send({role: res.locals.role});
         });
+        this.app.use('/', this.logout.router);
         this.app.use('/', this.userController.router);
         this.app.use('/', this.calendarController.router);
         this.app.use('/', this.bookRoomController.router);

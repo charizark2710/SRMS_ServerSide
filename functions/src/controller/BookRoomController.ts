@@ -56,15 +56,15 @@ export class BookRoomController {
             const tempEndTime=endTime.split(":");
             const fullEndTime=tempEndTime[0]+tempEndTime[1]+"00000";
 
-            await db.ref('Booking').child(id)
+            await db.ref('booking').child(id)
                 .set({
                     date: fullDate,
                     roomName: data.roomName,
                     startTime: fullStartTime,
                     endTime: fullEndTime,
                     reason: data.reason,
-                    status: data.status,
-                    userId: data.userId,
+                    status: "pending",
+                    actionNotiId:id
                 }, async (error) => {
                     if (error) {
                         response.status(500).send(error);
@@ -77,7 +77,8 @@ export class BookRoomController {
                             sendAt: fullTime,
                             isRead: false,
                             id: id,
-                            url:"/bookRoomRequest/"+id
+                            url:"/bookRoomRequest/"+id,
+                            isValid: true,
                         });
                         //gửi cho chính user đặt phòng
                         notification.sendMessage({
@@ -98,14 +99,23 @@ export class BookRoomController {
 
     viewDetailBookingRoom = async (request: express.Request, response: express.Response) => {
         try {
-            let result = {};
+            let result = {
+                userId:"",
+                roomName:"",
+                date:"",
+                startTime:"",
+                endTine:"",
+                reason:"",
+                status:"",
+            };
             const id = request.params.id;
             db.ref('notification').child('admin').child(id.toString()).update({
                 isRead: true
             });
-            await db.ref('Booking').child(id).get().then(function (snapshot) {
+            await db.ref('booking').child(id).get().then(function (snapshot) {
                 if (snapshot.exists()) {
                     result = snapshot.val();
+                    result["userId"]=id?.split("-")[0];
                 }
                 else {
                     console.log("No data available");
@@ -136,7 +146,7 @@ export class BookRoomController {
             const sec = tempSec.length === 2 ? tempSec : '0' + tempSec;
             const fullTime = year.concat(month, date) + "-" + hours.concat(min, sec, '000');
             const id = data.userId.toString() + '-' + fullTime;
-            await db.ref('Booking').child(data.id).update({
+            await db.ref('booking').child(data.id).update({
                 status: data.status,
             }, async (error) => {
                 if (error) {
@@ -164,6 +174,7 @@ export class BookRoomController {
         try {
             const bookingId = request.params.id;
             const message=request.query.message;
+            const actionNotiId=request.query.actionNotiId;
             const userId = bookingId?.split('-')[0] || ' ';
 
             const time = new Date();
@@ -183,9 +194,11 @@ export class BookRoomController {
 
             
            
-            await db.ref('Booking').child(bookingId).update({
-                status: "deleted"
+            await db.ref('booking').child(bookingId).update({
+                status: "deleted",
             }).then(function () {
+                    //noti trước khi hủy trở thành invalid
+                    notification.updateIsValid(actionNotiId+''); 
                     //gửi cho admin
                     notification.sendMessage({
                         message: ' deleted ' + message,
@@ -194,7 +207,8 @@ export class BookRoomController {
                         sendAt: fullTime,
                         isRead: false,
                         id: id,
-                        url:"/bookRoomRequest/"+bookingId
+                        url:"/bookRoomRequest/"+bookingId,
+                        isValid: false,
                     });
                     //gửi cho chính user đặt phòng
                     notification.sendMessage({
@@ -221,7 +235,7 @@ export class BookRoomController {
             let result;
             const id = request.params.id;
             //xóa trong booking, xóa hết noti
-            await db.ref('Booking').child(id).get().then(function (snapshot) {
+            await db.ref('booking').child(id).get().then(function (snapshot) {
                 if (snapshot.exists()) {
                     result = snapshot.val();
                 }
@@ -266,16 +280,19 @@ export class BookRoomController {
             const fullEndTime=tempEndTime[0]+tempEndTime[1]+"00000";
             const id = data.id?.split('-')[0].toString() + '-' + fullTime;
 
-            await db.ref('Booking').child(data.id).update({
+            await db.ref('booking').child(data.id).update({
                 date: fullDate,
                 roomName: data.roomName,
                 startTime: fullStartTime,
                 endTime: fullEndTime,
                 reason: data.reason,
+                actionNotiId:id,
             }, (error) => {
                 if (error) {
                     response.status(500).send(error);
                 } else {
+                    //noti trước khi cập nhật trở thành invalid
+                    notification.updateIsValid(data.actionNotiId); 
                     //gửi cho admin
                     notification.sendMessage({
                         message: ' changed a book room request to room ' + data.roomName + ' at ' + data.date + ' ' + data.startTime + '-' + data.endTime,
@@ -284,7 +301,8 @@ export class BookRoomController {
                         sendAt: fullTime,
                         isRead: false,
                         id: id,
-                        url:"/bookRoomRequest/"+data.id
+                        url:"/bookRoomRequest/"+data.id,
+                        isValid: true,
                     });
                     //gửi cho chính user đặt phòng
                     notification.sendMessage({

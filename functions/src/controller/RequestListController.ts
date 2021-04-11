@@ -57,7 +57,7 @@ export class RequestListController {
         try {
             let result: any[] = [];
             const currentUser = request.params.currentUser;
-            (await db.ref("Booking").orderByKey().startAt(currentUser).get()).forEach(snapshot => {
+            (await db.ref("booking").orderByKey().startAt(currentUser).get()).forEach(snapshot => {
 
                 const key = snapshot.key;
                 const value = snapshot.val();
@@ -74,9 +74,9 @@ export class RequestListController {
                     let sSencond = value.startTime?.substring(4, 6);
                     let formatedStartTime = sHour + ":" + sMinus + ":" + sSencond;
 
-                    let eHour = value.startTime?.substring(0, 2);
-                    let eMinus = value.startTime?.substring(2, 4);
-                    let eSencond = value.startTime?.substring(4, 6);
+                    let eHour = value.endTime?.substring(0, 2);
+                    let eMinus = value.endTime?.substring(2, 4);
+                    let eSencond = value.endTime?.substring(4, 6);
                     let formatedEndTime = eHour + ":" + eMinus + ":" + eSencond;
 
                     const bookingReq = {
@@ -84,14 +84,15 @@ export class RequestListController {
                         title: "request to book room " + value.roomName + " at " + formatedDate + " " + formatedStartTime + "-" + formatedEndTime,
                         requestType: "bookRoomRequest",
                         requestTime: key,
-                        status: value.status
+                        status: value.status,
+                        actionNotiId:value.actionNotiId
                     }
                     result.push(bookingReq);
                 }
 
             });
 
-            (await db.ref("ReportError").orderByKey().startAt(currentUser).get()).forEach(snapshot => {
+            (await db.ref("complaint").orderByKey().startAt(currentUser).get()).forEach(snapshot => {
 
                 const key = snapshot.key;
                 const value = snapshot.val();
@@ -101,7 +102,8 @@ export class RequestListController {
                         title: "request to report error at room " + value.roomName,
                         requestType: "reportErrorRequest",
                         requestTime: key,
-                        status: value.status
+                        status: value.status,
+                        actionNotiId:value.actionNotiId
                     }
                     result.push(bookingReq);
                 }
