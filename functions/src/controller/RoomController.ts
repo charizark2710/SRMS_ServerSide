@@ -1,7 +1,36 @@
 import * as express from 'express';
 import auth from './Authenticate';
-import authorized, { roomPermission } from './Authorized';
+import { roomPermission } from './Authorized';
 import { roomSchema, Room } from '../model/Room'
+import { db } from '../connector/configFireBase';
+
+async function updateReport(room: string, device: Room) {
+    const date = new Date();
+    const reportSchema = db.ref('report');
+    const tempM = (date.getMonth() + 1).toString();
+    const tempD = date.getDate().toString();
+    const month = tempM.length === 2 ? tempM : '0' + tempM;
+    const day = tempD.length === 2 ? tempD : '0' + tempD;
+    const year = date.getFullYear();
+    const roSchema = roomSchema.child(room).child('report');
+    const reSchema = reportSchema.child(room).child(year + month + day);
+    const currentRoomReport = (await roSchema.get()).val();
+    const currentReport = (await reSchema.get()).val();
+    for (const [key, value] of Object.entries(device)) {
+        const deviceObj: any = {};
+        const reportObj: any = {};
+        if (value === 0) {
+            deviceObj[key] = 0;
+            reportObj[key] = currentReport[key] + (date.getTime() - currentRoomReport[key]);
+            reportSchema.child(room).child(year + month + day).update(reportObj);
+            roSchema.update(deviceObj);
+        }
+        else {
+            deviceObj[key] = date.getTime();
+            roSchema.update(deviceObj);
+        }
+    }
+}
 
 export class RoomController {
     public router = express.Router();
@@ -17,27 +46,16 @@ export class RoomController {
         this.router.get(this.path + "/countNumberTurnOnDevices", auth, roomPermission(), this.countNumberTurnOnDevices);
     }
 
-    async updateReport(room: string, device: string, status: number) {
-        const deviceObj: any = {};
-        if (status === 1) {
-            const date = new Date();
-            deviceObj[device] = date.getTime();
-            roomSchema.child(room).child('report').update(deviceObj);
-        } else {
-            (await roomSchema.child(room).child('report').get()).val();
-        }
-    }
-
     //nhận về room, type và trạng thái device
     //dựa vào room và type device, update trạng thái
     switchDeviceStatus = async (request: express.Request, response: express.Response) => {
         try {
             const data = request.body;
             const room = response.locals.room;
-            const devices: Room = data.device;
+            const device: Room = data.device;
             if (data.roomName === room || response.locals.role === 'admin') {
-                await roomSchema.child(data.roomName).child('device').update(devices);
-
+                await updateReport(data.roomName, device);
+                await roomSchema.child(data.roomName).child('device').update(device);
                 return response.send("ok");
             } else {
                 response.status(403).send(`may khong duoc dung phong ${data.roomName}`);
@@ -54,6 +72,7 @@ export class RoomController {
             const status = parseInt(request.query.q as string);
             if (reqRoom === room || response.locals.role === 'admin') {
                 const devices: Room = { conditioner: status, fan: status, light: status, powerPlug: status };
+                await updateReport(room, devices);
                 await roomSchema.child(reqRoom).child('device').set(devices);
                 return response.send("ok");
             } else {
