@@ -56,9 +56,8 @@ export class RequestListController {
     getHistoryRequestForUser = async (request: express.Request, response: express.Response) => {
         try {
             let result: any[] = [];
-            const currentUser = request.params.currentUser;
+            const currentUser = response.locals.employeeId;
             (await db.ref("booking").orderByKey().startAt(currentUser + " ").endAt(currentUser + "~").get()).forEach(snapshot => {
-
                 const key = snapshot.key;
                 const value = snapshot.val();
                 if (value.status !== "deleted") {
