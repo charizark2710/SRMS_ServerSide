@@ -28,9 +28,9 @@ export class Login {
             let role = '';
             if ((await userSchema.child(employeeId as string).get()).exists()) {
                 if ((await (await userSchema.child(employeeId as string).get()).val() as User).banned) {
-                    return response.status(403).json('may bi ban roi');
+                    return response.status(403).json({ error: 'may bi ban roi' });
                 } else {
-                    userSchema.child(employeeId as string).update({uid: uid});
+                    userSchema.child(employeeId as string).update({ uid: uid });
                     role = (await userSchema.child(employeeId as string).get()).val().role;
                     if (eType === 'fpt.edu.vn') {
                         const idNum = email?.match('/[a-zA-Z]+|[0-9]+(?:\.[0-9]+)?|\.[0-9]+/g')?.toString();
@@ -49,7 +49,7 @@ export class Login {
                         sameSite: 'none',
                         secure: true
                     }));
-                    return response.json({role: role});
+                    return response.json({ role: role });
                 }
             } else {
                 if (eType === 'fpt.edu.vn') {
