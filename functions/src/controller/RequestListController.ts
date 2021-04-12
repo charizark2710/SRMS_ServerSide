@@ -57,7 +57,7 @@ export class RequestListController {
         try {
             let result: any[] = [];
             const currentUser = request.params.currentUser;
-            (await db.ref("booking").orderByKey().startAt(currentUser).get()).forEach(snapshot => {
+            (await db.ref("booking").orderByKey().startAt(currentUser + " ").endAt(currentUser + "~").get()).forEach(snapshot => {
 
                 const key = snapshot.key;
                 const value = snapshot.val();
@@ -92,7 +92,7 @@ export class RequestListController {
 
             });
 
-            (await db.ref("complaint").orderByKey().startAt(currentUser).get()).forEach(snapshot => {
+            (await db.ref("complaint").orderByKey().startAt(currentUser + " ").endAt(currentUser + "~").get()).forEach(snapshot => {
 
                 const key = snapshot.key;
                 const value = snapshot.val();

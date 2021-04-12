@@ -11,17 +11,17 @@ import Schedule from './schedule/schedule'
 
 const app = express();
 
-let media: mediaServer;
-posenet.load({
-    architecture: "MobileNetV1",
-    outputStride: 16,
-    multiplier: 0.75,
-    quantBytes: 2,
-    inputResolution: { width: 640, height: 480 }
-}).then(async net => {
-    media = new mediaServer(net);
-    media.dectectMedia();
-});
+// let media: mediaServer;
+// posenet.load({
+//     architecture: "MobileNetV1",
+//     outputStride: 16,
+//     multiplier: 0.75,
+//     quantBytes: 2,
+//     inputResolution: { width: 640, height: 480 }
+// }).then(async net => {
+//     media = new mediaServer(net);
+//     media.dectectMedia();
+// });
 
 app.use(cookieParser());
 
