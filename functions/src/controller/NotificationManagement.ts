@@ -24,6 +24,11 @@ class notificationManagement {
             isRead: true
         });
     }
+    updateIsValid=(id:string)=>{
+        db.ref('notification').child('admin').child(id.toString()).update({
+            isValid: false
+        });
+    }
     
 }
 

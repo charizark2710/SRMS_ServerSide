@@ -54,14 +54,15 @@ export class ReportErrorController {
                 });
             }
 
-           
-            await db.ref('ReportError').child(id).set({
+
+            await db.ref('complaint').child(id).set({
                 roomName: data.roomName,
                 deviceNames: data.deviceNames,
                 description: data.description,
                 status: "pending",
                 userId: data.userId,
                 id: id,
+                actionNotiId:id
             }, (error) => {
                 if (error) {
                     response.status(500).send(error);
@@ -74,11 +75,12 @@ export class ReportErrorController {
                         sendAt: fullTime,
                         isRead: false,
                         id: id,
-                        url: "/reportErrorRequest/" + id
+                        url: "/reportErrorRequest/" + id,
+                        isValid: true,
                     });
                     //gửi cho chính user make request
                     notification.sendMessage({
-                        message: 'Sending request to report error'+ ' at room ' + data.roomName+' successfully',
+                        message: 'Sending request to report error' + ' at room ' + data.roomName + ' successfully',
                         receiver: data.userId,
                         sender: "admin",
                         sendAt: fullTime,
@@ -100,7 +102,7 @@ export class ReportErrorController {
             db.ref('notification').child('admin').child(id.toString()).update({
                 isRead: true
             });
-            await db.ref('ReportError').child(id).get().then(function (snapshot) {
+            await db.ref('complaint').child(id).get().then(function (snapshot) {
                 if (snapshot.exists()) {
                     result = snapshot.val();
                 }
@@ -119,7 +121,8 @@ export class ReportErrorController {
     deleteReportError = async (request: express.Request, response: express.Response) => {
         try {
             const reportErrId = request.params.id;
-            const message=request.query.message;
+            const message = request.query.message;
+            const actionNotiId=request.query.actionNotiId;
             const userId = reportErrId?.split('-')[0] || ' ';
 
             const time = new Date();
@@ -138,30 +141,33 @@ export class ReportErrorController {
             const id = userId.toString() + '-' + fullTime;
 
             //xóa trong booking, xóa hết noti
-            await db.ref('ReportError').child(reportErrId).update({
-                status: "deleted"
+            await db.ref('complaint').child(reportErrId).update({
+                status: "deleted",
             }).then(function () {
-                    //gửi cho admin
-                    notification.sendMessage({
-                        message: ' deleted ' + message,
-                        receiver: "admin",
-                        sender: userId,
-                        sendAt: fullTime,
-                        isRead: false,
-                        id: id,
-                        url: "/reportErrorRequest/" + reportErrId
-                    });
-                    //gửi cho chính user make request
-                    notification.sendMessage({
-                        message: 'You deleted '+ message,
-                        receiver: userId,
-                        sender: "admin",
-                        sendAt: fullTime,
-                        isRead: false,
-                        id: id,
-                    });
+                //noti trước khi hủy trở thành invalid
+                notification.updateIsValid(actionNotiId+'');
+                //gửi cho admin
+                notification.sendMessage({
+                    message: ' deleted ' + message,
+                    receiver: "admin",
+                    sender: userId,
+                    sendAt: fullTime,
+                    isRead: false,
+                    id: id,
+                    url: "/reportErrorRequest/" + reportErrId,
+                    isValid: false,
+                });
+                //gửi cho chính user make request
+                notification.sendMessage({
+                    message: 'You deleted ' + message,
+                    receiver: userId,
+                    sender: "admin",
+                    sendAt: fullTime,
+                    isRead: false,
+                    id: id,
+                });
 
-                })
+            })
                 .catch(function (error) {
                     console.log("Remove failed: " + error.message)
                 });
@@ -192,7 +198,7 @@ export class ReportErrorController {
             const id = data.userId.toString() + '-' + fullTime;
 
 
-            await db.ref('ReportError').child(data.id).update({
+            await db.ref('complaint').child(data.id).update({
                 status: data.status,
             }, (error) => {
                 if (error) {
@@ -200,7 +206,7 @@ export class ReportErrorController {
                 } else {
                     //send noti to user
                     notification.sendMessage({
-                        message: 'Your request to report error'+ ' at room ' + data.roomName+' has been '+data.status,
+                        message: 'Your request to report error' + ' at room ' + data.roomName + ' has been ' + data.status,
                         receiver: data.userId,
                         sender: "admin",
                         sendAt: fullTime,
@@ -219,7 +225,7 @@ export class ReportErrorController {
         try {
             let result;
             const id = request.params.id;
-            await db.ref('ReportError').child(id).get().then(function (snapshot) {
+            await db.ref('complaint').child(id).get().then(function (snapshot) {
                 if (snapshot.exists()) {
                     result = snapshot.val();
                 }
@@ -254,14 +260,17 @@ export class ReportErrorController {
             const id = data.id?.split('-')[0].toString() + '-' + fullTime;
 
 
-            await db.ref('ReportError').child(data.id).update({
+            await db.ref('complaint').child(data.id).update({
                 roomName: data.roomName,
                 deviceNames: data.deviceNames,
                 description: data.description,
+                actionNotiId:id,
             }, (error) => {
                 if (error) {
                     response.status(500).send(error);
                 } else {
+                    //noti trước khi cập nhật trở thành invalid
+                    notification.updateIsValid(data.actionNotiId);
                     //gửi cho admin
                     notification.sendMessage({
                         message: ' changed a request to report error at room ' + data.roomName,
@@ -270,11 +279,12 @@ export class ReportErrorController {
                         sendAt: fullTime,
                         isRead: false,
                         id: id,
-                        url: "/reportErrorRequest/" + data.id
+                        url: "/reportErrorRequest/" + data.id,
+                        isValid: true,
                     });
                     //gửi cho chính user make request
                     notification.sendMessage({
-                        message: 'You changed a report error request'+ ' at room ' + data.roomName,
+                        message: 'You changed a report error request' + ' at room ' + data.roomName,
                         receiver: data.id?.split('-')[0] || ' ',
                         sender: "admin",
                         sendAt: fullTime,

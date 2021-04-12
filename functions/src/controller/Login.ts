@@ -31,7 +31,7 @@ export class Login {
                     return response.status(403).json('may bi ban roi');
                 } else {
                     userSchema.child(employeeId as string).update({uid: uid});
-                    role = (await adminAuth.getUser(uid)).customClaims?.role;
+                    role = (await userSchema.child(employeeId as string).get()).val().role;
                     if (eType === 'fpt.edu.vn') {
                         const idNum = email?.match('/[a-zA-Z]+|[0-9]+(?:\.[0-9]+)?|\.[0-9]+/g')?.toString();
                         if (idNum?.length! >= 4)
@@ -49,7 +49,7 @@ export class Login {
                         sameSite: 'none',
                         secure: true
                     }));
-                    return response.json('ok');
+                    return response.json({role: role});
                 }
             } else {
                 if (eType === 'fpt.edu.vn') {
@@ -77,7 +77,6 @@ export class Login {
                             role: role
                         });
                     }
-                    role = (await adminAuth.getUser(uid)).customClaims?.role;
                     const token = 'Bearer ' + jwt.sign({ uid: uid, employeeId: data.employeeId, role: role, email: email }, functions.config().other.secret_or_publickey as string);
                     response.setHeader('Set-Cookie', cookie.serialize('token', token, {
                         httpOnly: true,
@@ -96,7 +95,6 @@ export class Login {
                         bannedAt: null,
                         role: role
                     });
-                    role = (await adminAuth.getUser(uid)).customClaims?.role;
                     const token = 'Bearer ' + jwt.sign({ uid: uid, employeeId: data.employeeId, role: role, email: data.email }, functions.config().other.secret_or_publickey as string);
                     response.setHeader('Set-Cookie', cookie.serialize('token', token, {
                         httpOnly: true,

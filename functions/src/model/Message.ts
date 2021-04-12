@@ -7,5 +7,6 @@ export default interface message {
     isRead: boolean,
     typeRequest?:string,
     status?:string,
-    url?: string
+    url?: string,
+    isValid?:boolean,
 }
