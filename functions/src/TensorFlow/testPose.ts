@@ -16,11 +16,13 @@ export class testPose {
         const $this = this;
         try {
             const input: any = tf.browser.fromPixels(canvas);
-            $this.net.estimateSinglePose(input, {
-                flipHorizontal: true,
+            $this.net.estimateMultiplePoses(input, {
+                flipHorizontal: false,
+                maxDetections: 5,
+                nmsRadius: 20
             }).then(pose => {
                 fs.open('./output.txt', 'a', null, (e, fd) => {
-                    fs.write(fd, JSON.stringify(pose) + '\r\n', function(){console.log('')});
+                    fs.write(fd, JSON.stringify(pose) + '\r\n', function () { console.log('') });
                 });
             });
         } catch (error) {

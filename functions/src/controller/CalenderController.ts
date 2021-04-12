@@ -15,7 +15,6 @@ export default class CalendarController {
         this.router.post(this.url + '/add', auth, this.addSchedule);
         this.router.get(this.url + '/:id', auth, this.getSchedules);
         this.router.put(this.url + '/:id', auth, this.editSchedule);
-        this.router.delete(this.url + '/:id', auth, this.editSchedule);
     }
 
     viewCalendar = async (request: express.Request, response: express.Response) => {
@@ -33,15 +32,19 @@ export default class CalendarController {
                 if (selectedRooms) {
                     const rooms = selectedRooms.toString().split(',');
                     snaps.forEach(snap => {
-                        result.push((Object.values(snap.val())).filter(val => {
-                            return (rooms.includes((val as Calendar).room) && (val as Calendar).userId === userId)
-                        }));
+                        if (snap.val()) {
+                            result.push((Object.values(snap.val())).filter(val => {
+                                return (rooms.includes((val as Calendar).room) && (val as Calendar).userId === userId)
+                            }));
+                        }
                     });
                 } else {
                     snaps.forEach(snap => {
-                        result.push((Object.values(snap.val())).filter(val => {
-                            return ((val as Calendar).userId === userId)
-                        }));
+                        if (snap.val()) {
+                            result.push((Object.values(snap.val())).filter(val => {
+                                return ((val as Calendar).userId === userId)
+                            }));
+                        }
                     });
                 }
             }
@@ -50,13 +53,17 @@ export default class CalendarController {
                 if (selectedRooms) {
                     const rooms = selectedRooms.toString().split(',');
                     snaps.forEach(snap => {
-                        result.push((Object.values(snap.val())).filter(val => {
-                            return (rooms.includes((val as Calendar).room))
-                        }));
+                        if (snap.val()) {
+                            result.push((Object.values(snap.val())).filter(val => {
+                                return (rooms.includes((val as Calendar).room))
+                            }));
+                        }
                     });
                 } else {
                     snaps.forEach(snap => {
-                        result.push(Object.values(snap.val()));
+                        if (snap.val()) {
+                            result.push(Object.values(snap.val()));
+                        }
                     });
                 }
             }
@@ -119,17 +126,19 @@ export default class CalendarController {
                 return response.status(500).send('Sai uid');
             }
             // const test = new Date(parseInt(data.date.slice(0, 4)), parseInt(data.date.slice(4, 6)) - 1, parseInt(data.date.slice(6, 8)));
-            isOcc = (await calendarSchema.child(data.date).orderByChild('isDone').equalTo(false).get()).forEach(snap => {
+            isOcc = (await calendarSchema.child(data.date).get()).forEach(snap => {
                 const value: Calendar = snap.val();
                 const from = parseInt(value.from);
                 const to = parseInt(value.to);
-                if (value.date === data.date && value.room === data.room) {
-                    if (reqFrom === from || reqTo === to) {
-                        return true;
-                    } else if (reqFrom > from && reqFrom < to) {
-                        return true;
-                    } else if (reqTo > from && reqTo < to) {
-                        return true;
+                if (!value.isDone) {
+                    if (value.date === data.date && value.room === data.room) {
+                        if (reqFrom === from || reqTo === to) {
+                            return true;
+                        } else if (reqFrom > from && reqFrom < to) {
+                            return true;
+                        } else if (reqTo > from && reqTo < to) {
+                            return true;
+                        }
                     }
                 }
             });
@@ -141,17 +150,42 @@ export default class CalendarController {
                 response.status(400).send('Lich kin roi');
             }
         } catch (error) {
-            response.status(500).send(error);
+            response.status(500).json(error);
         }
     }
 
     editSchedule = async (request: express.Request, response: express.Response) => {
         try {
             const id = request.params.id;
+            const date = request.query.date;
             const data: Calendar = request.body;
-            await calendarSchema.child(id).update({ isDone: true });
-            await calendarSchema.child(data.room + "-" + data.from + "-" + data.to).set(data);
-            response.status(200).send('ok');
+            const reqFrom = parseInt(data.from);
+            const reqTo = parseInt(data.to);
+            let isOcc: boolean = false;
+            isOcc = (await calendarSchema.child(data.date).get()).forEach(snap => {
+                const value: Calendar = snap.val();
+                const from = parseInt(value.from);
+                const to = parseInt(value.to);
+                if (!value.isDone) {
+                    if (value.date === data.date && value.room === data.room) {
+                        if (reqFrom === from || reqTo === to) {
+                            return true;
+                        } else if (reqFrom > from && reqFrom < to) {
+                            return true;
+                        } else if (reqTo > from && reqTo < to) {
+                            return true;
+                        }
+                    }
+                }
+            });
+            if (!isOcc) {
+                data.isDone = false;
+                calendarSchema.child(data.date).child(data.room.concat('-', data.from, '-', data.to)).set(data);
+                await calendarSchema.child(date as string).child(id).update({ isDone: true });
+                response.status(200).send('ok');
+            } else {
+                response.status(400).send('Lich kin roi');
+            }
         } catch (error) {
             response.status(500).send(error);
         }
