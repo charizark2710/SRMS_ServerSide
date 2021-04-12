@@ -24,19 +24,6 @@ class notificationManagement {
             isRead: true
         });
     }
-
-    updateAdminApprovalStatus=(id:string, status:string, userId:string, sendAt:string)=>{
-        db.ref('notification').child(userId).child(id.toString()).update({
-            id: id,
-            status: status,
-            sendAt:sendAt
-        });
-        db.ref('notification').child('admin').child(id.toString()).update({
-            id: id,
-            status: status,
-            sendAt:sendAt
-        });
-    }
     
 }
 
