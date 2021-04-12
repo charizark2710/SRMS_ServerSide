@@ -36,7 +36,7 @@ export class mediaServer {
                             const ctx = canvas.getContext('2d');
                             const image: Image = await loadImage(val);
                             ctx.drawImage(image, 0, 0);
-                            await $this.pose.loadAndPredict(canvas);
+                            await $this.pose.loadAndPredict(canvas, snap.ref.parent?.parent?.key as string);
                             db.ref('room/' + snap.ref.parent?.parent?.key + '/camera').update({ isReady: 1 });
                         } else {
                             console.log(arg.parent?.key);
@@ -49,16 +49,16 @@ export class mediaServer {
 
                 arg.off('child_changed', async snap => {
                     try {
-                        const val = snap.val();
-                        if (typeof val !== 'number') {
+                        const val = "data:image/jpeg;base64," + snap.val();
+                        if (typeof snap.val() !== 'number') {
                             const canvas = createCanvas(480, 640);
                             const ctx = canvas.getContext('2d');
                             const image: Image = await loadImage(val);
-
                             ctx.drawImage(image, 0, 0);
-                            await $this.pose.loadAndPredict(canvas);
-                            db.ref('room/' + snap.ref.parent?.parent?.key + '/camera').set({ frame: "", isReady: 1 });
+                            await $this.pose.loadAndPredict(canvas, snap.ref.parent?.parent?.key as string);
+                            db.ref('room/' + snap.ref.parent?.parent?.key + '/camera').update({ isReady: 1 });
                         } else {
+                            console.log(arg.parent?.key);
                             console.log(val);
                         }
                     } catch (error) {
