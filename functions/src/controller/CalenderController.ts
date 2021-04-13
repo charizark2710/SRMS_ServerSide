@@ -193,9 +193,13 @@ export default class CalendarController {
 
     deleteSchedule = async (request: express.Request, response: express.Response) => {
         try {
+            const date = request.query.date;
             const id = request.params.id;
-            await calendarSchema.child(id).update({ isDone: true });
-            response.status(200).send('ok');
+            if (date) {
+                await calendarSchema.child(date as string).child(id).update({ isDone: true });
+                response.status(200).send('ok');
+            }
+
         } catch (error) {
             response.status(500).send(error);
         }
@@ -203,9 +207,12 @@ export default class CalendarController {
 
     getSchedules = async (request: express.Request, response: express.Response) => {
         try {
+            const date = request.query.date;
             const id = request.params.id;
-            const result = (await calendarSchema.child(id).get()).val() as Calendar;
-            !result.isDone ? response.status(200).json(result) : response.status(400).json({ error: "da xoa roi" });
+            if (date) {
+                const result = (await calendarSchema.child(date as string).child(id).get()).val() as Calendar;
+                !result.isDone ? response.status(200).json(result) : response.status(400).json({ error: "da xoa roi" });
+            }
         } catch (error) {
             response.status(500).send(error);
         }
