@@ -17,7 +17,7 @@ export class BookRoomController {
         this.router.post(this.path + '/add', auth, this.createBookingRoom);
         this.router.patch(this.path + "/delete/:id", this.cancelBookingRoom);
         this.router.patch(this.path + "/acceptOrRejectBooking", this.acceptOrRejectBooking);
-        this.router.put(this.path + "/update", this.updateBooking);4
+        this.router.put(this.path + "/update", this.updateBooking);
         this.router.get(this.path + '/getAvailableRooms', this.getAvailableRooms);
         this.router.get(this.path + '/:id', this.viewDetailBookingRoom);
         this.router.get(this.path + '/edit/:id', this.getBookingById);
