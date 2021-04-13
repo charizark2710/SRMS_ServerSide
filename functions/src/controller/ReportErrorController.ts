@@ -1,10 +1,8 @@
-import { userSchema } from '../model/UserModel'
 import * as express from 'express';
 import { db, adminAuth } from "../connector/configFireBase"
 import auth from './Authenticate';
 import authorized from './Authorized';
 import notification from './NotificationManagement'
-import { roomSchema, Room } from '../model/Room'
 
 export class ReportErrorController {
     public router = express.Router();

@@ -21,9 +21,25 @@ async function updateReport(room: string, device: Room) {
         const reportObj: any = {};
         if (value === 0) {
             deviceObj[key] = 0;
-            reportObj[key] = currentReport[key] + (date.getTime() - currentRoomReport[key]);
-            reportSchema.child(room).child(year + month + day).update(reportObj);
+            reportObj[key] = (currentReport && currentReport[key]) ? currentReport[key] + (date.getTime() - currentRoomReport[key]) : 0 + (date.getTime() - currentRoomReport[key]);
             roSchema.update(deviceObj);
+            reSchema.update(reportObj);
+            let totalEachDevice: any = { fan: 0, light: 0, powerPlug: 0, conditioner: 0 };
+            let total = 0;
+
+            (await reportSchema.get()).forEach(snap => {
+                if (snap.val().key !== 'totalEachDevice') {
+                    for (const value of Object.values(snap.val())) {
+                        for (const [key, val] of Object.entries(value as any)) {
+                            totalEachDevice[key] += val as number;
+                        }
+                    }
+                }
+            });
+            await Object.values(totalEachDevice).forEach(val => {
+                total += val as number;
+            })
+            await reportSchema.update({ total: total, totalEachDevice: totalEachDevice });
         }
         else {
             deviceObj[key] = date.getTime();
@@ -43,7 +59,7 @@ export class RoomController {
         this.router.patch(this.path + "/switchDeviceStatus", auth, roomPermission(), this.switchDeviceStatus);
         this.router.put(this.path + "/switchAllDevicesStatus/:id", auth, roomPermission(), this.switchAllDevicesStatus);
         this.router.post(this.path + "/sendDevicesStatus", auth, roomPermission(), this.sendDevicesStatus);
-        this.router.get(this.path + "/countNumberTurnOnDevices",auth, roomPermission(), this.countNumberTurnOnDevices);
+        this.router.get(this.path + "/countNumberTurnOnDevices", auth, roomPermission(), this.countNumberTurnOnDevices);
         // this.router.get(this.path + "/countNumberTurnOnDevices", auth, roomPermission(), this.countNumberTurnOnDevices);
     }
 
@@ -55,14 +71,15 @@ export class RoomController {
             const room = response.locals.room;
             const device: Room = data.device;
             if (data.roomName === room || response.locals.role === 'admin') {
-                await updateReport(data.roomName, device);
+                updateReport(data.roomName, device);
                 await roomSchema.child(data.roomName).child('device').update(device);
                 return response.send("ok");
             } else {
                 response.status(403).send(`may khong duoc dung phong ${data.roomName}`);
             }
         } catch (error) {
-            response.status(500).send(error);
+            console.log(error);
+            response.status(500).json(error as Error);
         }
     }
 

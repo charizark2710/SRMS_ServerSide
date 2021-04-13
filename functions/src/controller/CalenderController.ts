@@ -138,6 +138,8 @@ export default class CalendarController {
                             return true;
                         } else if (reqTo > from && reqTo < to) {
                             return true;
+                        } else if (reqFrom < from && reqTo > to) {
+                            return true;
                         }
                     }
                 }
