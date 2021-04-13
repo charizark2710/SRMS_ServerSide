@@ -3,6 +3,9 @@
     "notification": {
       ".read": true
     },
+    "users": {
+      ".indexOn": ["banned"]
+    },
     "calendar": {
       ".read": true,
         ".write": true
@@ -15,6 +18,6 @@
         ".read": true,
       ".write": true
       }
-    }
+    },
   }
 }

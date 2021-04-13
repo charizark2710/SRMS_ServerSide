@@ -3,7 +3,8 @@ import { db } from "../connector/configFireBase"
 import notification from './NotificationManagement'
 import auth from './Authenticate';
 import authorized from './Authorized';
-import { fullDay } from '../schedule/scheduleBuffer';
+import { parse } from 'cookie';
+
 
 export class BookRoomController {
     public router = express.Router();
@@ -17,6 +18,7 @@ export class BookRoomController {
         this.router.patch(this.path + "/delete/:id", this.cancelBookingRoom);
         this.router.patch(this.path + "/acceptOrRejectBooking", this.acceptOrRejectBooking);
         this.router.put(this.path + "/update", this.updateBooking);
+        this.router.get(this.path + '/getAvailableRooms', this.getAvailableRooms);
         this.router.get(this.path + '/:id', this.viewDetailBookingRoom);
         this.router.get(this.path + '/edit/:id', this.getBookingById);
     }
@@ -49,12 +51,12 @@ export class BookRoomController {
             const bookingTime = data.date;
             const startTime = data.startTime;
             const endTime = data.endTime;
-            const tempFullDate=bookingTime.split("-");
-            const fullDate=tempFullDate[0]+tempFullDate[1]+tempFullDate[2];
-            const tempStartTime=startTime.split(":");
-            const fullStartTime=tempStartTime[0]+tempStartTime[1]+"00000";
-            const tempEndTime=endTime.split(":");
-            const fullEndTime=tempEndTime[0]+tempEndTime[1]+"00000";
+            const tempFullDate = bookingTime.split("-");
+            const fullDate = tempFullDate[0] + tempFullDate[1] + tempFullDate[2];
+            const tempStartTime = startTime.split(":");
+            const fullStartTime = tempStartTime[0] + tempStartTime[1] + "00000";
+            const tempEndTime = endTime.split(":");
+            const fullEndTime = tempEndTime[0] + tempEndTime[1] + "00000";
 
             await db.ref('booking').child(id)
                 .set({
@@ -64,7 +66,7 @@ export class BookRoomController {
                     endTime: fullEndTime,
                     reason: data.reason,
                     status: "pending",
-                    actionNotiId:id
+                    actionNotiId: id
                 }, async (error) => {
                     if (error) {
                         response.status(500).send(error);
@@ -77,12 +79,12 @@ export class BookRoomController {
                             sendAt: fullTime,
                             isRead: false,
                             id: id,
-                            url:"/bookRoomRequest/"+id,
+                            url: "/bookRoomRequest/" + id,
                             isValid: true,
                         });
                         //gửi cho chính user đặt phòng
                         notification.sendMessage({
-                            message: 'Sending request to book room ' + data.roomName + ' at ' + data.date + ' ' + data.startTime + '-' + data.endTime +" successfully",
+                            message: 'Sending request to book room ' + data.roomName + ' at ' + data.date + ' ' + data.startTime + '-' + data.endTime + " successfully",
                             receiver: data.userId,
                             sender: "admin",
                             sendAt: fullTime,
@@ -100,13 +102,13 @@ export class BookRoomController {
     viewDetailBookingRoom = async (request: express.Request, response: express.Response) => {
         try {
             let result = {
-                userId:"",
-                roomName:"",
-                date:"",
-                startTime:"",
-                endTine:"",
-                reason:"",
-                status:"",
+                userId: "",
+                roomName: "",
+                date: "",
+                startTime: "",
+                endTine: "",
+                reason: "",
+                status: "",
             };
             const id = request.params.id;
             db.ref('notification').child('admin').child(id.toString()).update({
@@ -115,7 +117,7 @@ export class BookRoomController {
             await db.ref('booking').child(id).get().then(function (snapshot) {
                 if (snapshot.exists()) {
                     result = snapshot.val();
-                    result["userId"]=id?.split("-")[0];
+                    result["userId"] = id?.split("-")[0];
                 }
                 else {
                     console.log("No data available");
@@ -154,7 +156,7 @@ export class BookRoomController {
                 } else {
                     //send noti to user
                     notification.sendMessage({
-                        message: 'Your request to book room ' + data.roomName + ' at ' + data.date + ' ' + data.time +" has been "+data.status,
+                        message: 'Your request to book room ' + data.roomName + ' at ' + data.date + ' ' + data.time + " has been " + data.status,
                         receiver: data.userId,
                         sender: "admin",
                         sendAt: fullTime,
@@ -173,8 +175,8 @@ export class BookRoomController {
     cancelBookingRoom = async (request: express.Request, response: express.Response) => {
         try {
             const bookingId = request.params.id;
-            const message=request.query.message;
-            const actionNotiId=request.query.actionNotiId;
+            const message = request.query.message;
+            const actionNotiId = request.query.actionNotiId;
             const userId = bookingId?.split('-')[0] || ' ';
 
             const time = new Date();
@@ -192,35 +194,35 @@ export class BookRoomController {
             const fullTime = year.concat(month, date) + "-" + hours.concat(min, sec, '000');
             const id = userId.toString() + '-' + fullTime;
 
-            
-           
+
+
             await db.ref('booking').child(bookingId).update({
                 status: "deleted",
             }).then(function () {
-                    //noti trước khi hủy trở thành invalid
-                    notification.updateIsValid(actionNotiId+''); 
-                    //gửi cho admin
-                    notification.sendMessage({
-                        message: ' deleted ' + message,
-                        receiver: "admin",
-                        sender: userId,
-                        sendAt: fullTime,
-                        isRead: false,
-                        id: id,
-                        url:"/bookRoomRequest/"+bookingId,
-                        isValid: false,
-                    });
-                    //gửi cho chính user đặt phòng
-                    notification.sendMessage({
-                        message: 'You deleted ' + message +" successfully",
-                        receiver: userId,
-                        sender: "admin",
-                        sendAt: fullTime,
-                        isRead: false,
-                        id: id,
-                    });
+                //noti trước khi hủy trở thành invalid
+                notification.updateIsValid(actionNotiId + '');
+                //gửi cho admin
+                notification.sendMessage({
+                    message: ' deleted ' + message,
+                    receiver: "admin",
+                    sender: userId,
+                    sendAt: fullTime,
+                    isRead: false,
+                    id: id,
+                    url: "/bookRoomRequest/" + bookingId,
+                    isValid: false,
+                });
+                //gửi cho chính user đặt phòng
+                notification.sendMessage({
+                    message: 'You deleted ' + message + " successfully",
+                    receiver: userId,
+                    sender: "admin",
+                    sendAt: fullTime,
+                    isRead: false,
+                    id: id,
+                });
 
-                })
+            })
                 .catch(function (error) {
                     console.log("Remove failed: " + error.message)
                 });
@@ -272,12 +274,12 @@ export class BookRoomController {
             const bookingTime = data.date;
             const startTime = data.startTime;
             const endTime = data.endTime;
-            const tempFullDate=bookingTime.split("-");
-            const fullDate=tempFullDate[0]+tempFullDate[1]+tempFullDate[2];
-            const tempStartTime=startTime.split(":");
-            const fullStartTime=tempStartTime[0]+tempStartTime[1]+"00000";
-            const tempEndTime=endTime.split(":");
-            const fullEndTime=tempEndTime[0]+tempEndTime[1]+"00000";
+            const tempFullDate = bookingTime.split("-");
+            const fullDate = tempFullDate[0] + tempFullDate[1] + tempFullDate[2];
+            const tempStartTime = startTime.split(":");
+            const fullStartTime = tempStartTime[0] + tempStartTime[1] + "00000";
+            const tempEndTime = endTime.split(":");
+            const fullEndTime = tempEndTime[0] + tempEndTime[1] + "00000";
             const id = data.id?.split('-')[0].toString() + '-' + fullTime;
 
             await db.ref('booking').child(data.id).update({
@@ -286,13 +288,13 @@ export class BookRoomController {
                 startTime: fullStartTime,
                 endTime: fullEndTime,
                 reason: data.reason,
-                actionNotiId:id,
+                actionNotiId: id,
             }, (error) => {
                 if (error) {
                     response.status(500).send(error);
                 } else {
                     //noti trước khi cập nhật trở thành invalid
-                    notification.updateIsValid(data.actionNotiId); 
+                    notification.updateIsValid(data.actionNotiId);
                     //gửi cho admin
                     notification.sendMessage({
                         message: ' changed a book room request to room ' + data.roomName + ' at ' + data.date + ' ' + data.startTime + '-' + data.endTime,
@@ -301,7 +303,7 @@ export class BookRoomController {
                         sendAt: fullTime,
                         isRead: false,
                         id: id,
-                        url:"/bookRoomRequest/"+data.id,
+                        url: "/bookRoomRequest/" + data.id,
                         isValid: true,
                     });
                     //gửi cho chính user đặt phòng
@@ -320,5 +322,77 @@ export class BookRoomController {
             response.status(500).send(err);
         }
     }
+
+    getAvailableRooms = async (request: express.Request, response: express.Response) => {
+        try {
+            // let result;
+            let reqDate: number, reqStartTime: number, reqEndTime: number, busyRoom: any[]=[], allRooms: any[]=[], result: any[]=[]
+            const date = request.query.date?.toString();
+            const startTime = request.query.startTime?.toString();
+            const endTime = request.query.endTime?.toString();
+
+            const tempFullDate = date?.split("-");
+            if (tempFullDate) {
+                let fullDate = tempFullDate[0] + tempFullDate[1] + tempFullDate[2];
+                reqDate = parseInt(fullDate)
+            }
+            const tempStartTime = startTime?.split(":");
+            if (tempStartTime) {
+                let fullStartTime = tempStartTime[0] + tempStartTime[1] + "00000";
+                reqStartTime = parseInt(fullStartTime)
+            }
+            const tempEndTime = endTime?.split(":");
+            if (tempEndTime) {
+                let fullEndTime = tempEndTime[0] + tempEndTime[1] + "00000";
+                reqEndTime = parseInt(fullEndTime)
+            }
+
+
+            (await db.ref('booking').get()).forEach(snap => {
+                const value = snap.val();
+                const startTime = parseInt(value.startTime);
+                const endTime = parseInt(value.endTime);
+                if (value.date == reqDate.toString && (value.status == "pending" || value.status == "accepted")) {
+                    if (reqStartTime === startTime || reqEndTime === endTime) {
+                        busyRoom.push(value.roomName)
+                    } else if (reqStartTime > startTime && reqStartTime < endTime) {
+                        busyRoom.push(value.roomName)
+                    } else if (reqEndTime > startTime && reqEndTime < endTime) {
+                        busyRoom.push(value.roomName)
+                    }
+                    else if (reqStartTime < startTime && reqEndTime > endTime) {
+                        busyRoom.push(value.roomName)
+                    }
+                }
+            });
+
+            (await db.ref('room').get()).forEach(snap => {
+                let room = snap.key;
+                if (room) {
+                    allRooms.push(room);
+                }
+            })
+
+            result = allRooms.filter(x => !busyRoom.includes(x));
+
+            busyRoom.forEach(x=>{
+                console.log("busy :" +x);
+            })
+            console.log("length: "+busyRoom.length);
+            allRooms.forEach(x=>{
+                console.log("all :" +x);
+                
+            })
+            result.forEach(x=>{
+                console.log("result :" +x);
+                
+            })
+            
+            return response.status(200).json(result);
+        } catch (err) {
+            response.status(500).send(err);
+        }
+    }
+
 
 }
