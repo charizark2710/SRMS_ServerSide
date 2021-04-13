@@ -3,30 +3,37 @@ import auth from './Authenticate';
 import { roomPermission } from './Authorized';
 import { roomSchema, Room } from '../model/Room'
 import { db } from '../connector/configFireBase';
+import { Reference } from 'firebase-admin/node_modules/@firebase/database-types/index'
 
-export async function updateReport(room: string, device: Room) {
-    const date = new Date();
-    const reportSchema = db.ref('report');
-    const tempM = (date.getMonth() + 1).toString();
-    const tempD = date.getDate().toString();
-    const month = tempM.length === 2 ? tempM : '0' + tempM;
-    const day = tempD.length === 2 ? tempD : '0' + tempD;
-    const year = date.getFullYear();
-    const roSchema = roomSchema.child(room).child('report');
-    const reSchema = reportSchema.child(room).child(year + month + day);
-    const currentRoomReport = (await roSchema.get()).val();
-    const currentReport = (await reSchema.get()).val();
-    for (const [key, value] of Object.entries(device)) {
+const roomRef: Reference[] = [];
+
+roomRef.push = function (arg) {
+    arg.on('child_changed', async snap => {
+
+        const date = new Date();
+        const reportSchema = db.ref('report');
+        const tempM = (date.getMonth() + 1).toString();
+        const tempD = date.getDate().toString();
+        const month = tempM.length === 2 ? tempM : '0' + tempM;
+        const day = tempD.length === 2 ? tempD : '0' + tempD;
+        const year = date.getFullYear();
+
+        const key = snap.key as string;
+        const value = snap.val();
+
+        const roSchema = roomSchema.child(arg.parent?.key as string).child('report');
+        const reSchema = reportSchema.child(arg.parent?.key as string).child(year + month + day);
+
+        const currentRoomReport = (await roSchema.get()).val();
+        const currentReport = (await reSchema.get()).val();
+
         const deviceObj: any = {};
         const reportObj: any = {};
         if (value === 0) {
-            deviceObj[key] = 0;
             reportObj[key] = (currentReport && currentReport[key]) ? currentReport[key] + (date.getTime() - currentRoomReport[key]) : 0 + (date.getTime() - currentRoomReport[key]);
-            roSchema.update(deviceObj);
             reSchema.update(reportObj);
             let totalEachDevice: any = { fan: 0, light: 0, powerPlug: 0, conditioner: 0 };
             let total = 0;
-
             (await reportSchema.get()).forEach(snap => {
                 if (snap.val().key !== 'totalEachDevice') {
                     for (const value of Object.values(snap.val())) {
@@ -45,7 +52,8 @@ export async function updateReport(room: string, device: Room) {
             deviceObj[key] = date.getTime();
             roSchema.update(deviceObj);
         }
-    }
+    });
+    return Array.prototype.push.apply(this);
 }
 
 export class RoomController {
@@ -53,6 +61,11 @@ export class RoomController {
     path = '/room'
     constructor() {
         this.init();
+        roomSchema.get().then(snap => {
+            snap.forEach(snap => {
+                roomRef.push(snap.child('device').ref);
+            })
+        });
     }
 
     init() {
@@ -71,7 +84,6 @@ export class RoomController {
             const room = response.locals.room;
             const device: Room = data.device;
             if (data.roomName === room || response.locals.role === 'admin') {
-                updateReport(data.roomName, device);
                 await roomSchema.child(data.roomName).child('device').update(device);
                 return response.send("ok");
             } else {
@@ -90,7 +102,6 @@ export class RoomController {
             const status = parseInt(request.query.q as string);
             if (reqRoom === room || response.locals.role === 'admin') {
                 const devices: Room = { conditioner: status, fan: status, light: status, powerPlug: status };
-                updateReport(room, devices);
                 await roomSchema.child(reqRoom).child('device').set(devices);
                 return response.send("ok");
             } else {
