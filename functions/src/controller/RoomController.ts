@@ -4,7 +4,7 @@ import { roomPermission } from './Authorized';
 import { roomSchema, Room } from '../model/Room'
 import { db } from '../connector/configFireBase';
 
-async function updateReport(room: string, device: Room) {
+export async function updateReport(room: string, device: Room) {
     const date = new Date();
     const reportSchema = db.ref('report');
     const tempM = (date.getMonth() + 1).toString();
@@ -90,7 +90,7 @@ export class RoomController {
             const status = parseInt(request.query.q as string);
             if (reqRoom === room || response.locals.role === 'admin') {
                 const devices: Room = { conditioner: status, fan: status, light: status, powerPlug: status };
-                await updateReport(room, devices);
+                updateReport(room, devices);
                 await roomSchema.child(reqRoom).child('device').set(devices);
                 return response.send("ok");
             } else {
