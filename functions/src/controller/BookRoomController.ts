@@ -328,20 +328,20 @@ export class BookRoomController {
             // let result;
             let reqDate: number, reqStartTime: number, reqEndTime: number, busyRoom: any[]=[], allRooms: any[]=[], result: any[]=[]
             const date = request.query.date?.toString();
-            const startTime = request.query.startTime?.toString();
-            const endTime = request.query.endTime?.toString();
+            const qstartTime = request.query.startTime?.toString();
+            const qendTime = request.query.endTime?.toString();
 
             const tempFullDate = date?.split("-");
             if (tempFullDate) {
                 let fullDate = tempFullDate[0] + tempFullDate[1] + tempFullDate[2];
                 reqDate = parseInt(fullDate)
             }
-            const tempStartTime = startTime?.split(":");
+            const tempStartTime = qstartTime?.split(":");
             if (tempStartTime) {
                 let fullStartTime = tempStartTime[0] + tempStartTime[1] + "00000";
                 reqStartTime = parseInt(fullStartTime)
             }
-            const tempEndTime = endTime?.split(":");
+            const tempEndTime = qendTime?.split(":");
             if (tempEndTime) {
                 let fullEndTime = tempEndTime[0] + tempEndTime[1] + "00000";
                 reqEndTime = parseInt(fullEndTime)

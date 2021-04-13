@@ -34,11 +34,11 @@ roomRef.push = function (arg) {
             reSchema.update(reportObj);
             let totalEachDevice: any = { fan: 0, light: 0, powerPlug: 0, conditioner: 0 };
             let total = 0;
-            (await reportSchema.get()).forEach(snap => {
-                if (snap.val().key !== 'totalEachDevice') {
-                    for (const value of Object.values(snap.val())) {
-                        for (const [key, val] of Object.entries(value as any)) {
-                            totalEachDevice[key] += val as number;
+            (await reportSchema.get()).forEach(snapReport => {
+                if (snapReport.val().key !== 'totalEachDevice') {
+                    for (const reportValue of Object.values(snapReport.val())) {
+                        for (const [Reportkey, val] of Object.entries(reportValue as any)) {
+                            totalEachDevice[Reportkey] += val as number;
                         }
                     }
                 }
@@ -62,8 +62,8 @@ export class RoomController {
     constructor() {
         this.init();
         roomSchema.get().then(snap => {
-            snap.forEach(snap => {
-                roomRef.push(snap.child('device').ref);
+            snap.forEach(childSnap => {
+                roomRef.push(childSnap.child('device').ref);
             })
         });
     }
