@@ -2,6 +2,7 @@ import * as express from 'express';
 import { Calendar, calendarSchema } from '../model/Calendar'
 import auth from './Authenticate';
 import { userSchema } from '../model/UserModel'
+import { adminAuth } from '../connector/configFireBase'
 
 export default class CalendarController {
     router = express.Router();
@@ -184,6 +185,8 @@ export default class CalendarController {
                 data.isDone = false;
                 calendarSchema.child(data.date).child(data.room.concat('-', data.from, '-', data.to)).set(data);
                 await calendarSchema.child(date as string).child(id).update({ isDone: true });
+                const uid = (await userSchema.child(data.userId).get()).val()['uid'];
+                adminAuth.setCustomUserClaims(uid, { room: data.room });
                 response.status(200).send('ok');
             } else {
                 response.status(400).send('Lich kin roi');
@@ -198,10 +201,12 @@ export default class CalendarController {
             const date = request.query.date;
             const id = request.params.id;
             if (date) {
+                const calendar: Calendar = (await calendarSchema.child(date as string).child(id).get()).val();
+                const uid = (await userSchema.child(calendar.userId).get()).val()['uid'];
+                adminAuth.setCustomUserClaims(uid, { room: null });
                 await calendarSchema.child(date as string).child(id).update({ isDone: true });
                 response.status(200).send('ok');
             }
-
         } catch (error) {
             response.status(500).send(error);
         }
