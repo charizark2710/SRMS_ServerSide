@@ -22,7 +22,7 @@ roomRef.push = function (arg) {
         const value = snap.val();
 
         const roSchema = roomSchema.child(arg.parent?.key as string).child('report');
-        const reSchema = reportSchema.child(arg.parent?.key as string).child(year + month + day);
+        const reSchema = reportSchema.child(year + month + day);
 
         const currentRoomReport = (await roSchema.get()).val();
         const currentReport = (await reSchema.get()).val();
@@ -34,19 +34,15 @@ roomRef.push = function (arg) {
             reSchema.update(reportObj);
             let totalEachDevice: any = { fan: 0, light: 0, powerPlug: 0, conditioner: 0 };
             let total = 0;
-            (await reportSchema.get()).forEach(snapReport => {
-                if (snapReport.val().key !== 'totalEachDevice') {
-                    for (const reportValue of Object.values(snapReport.val())) {
-                        for (const [Reportkey, val] of Object.entries(reportValue as any)) {
-                            totalEachDevice[Reportkey] += val as number;
-                        }
-                    }
-                }
+            (await reSchema.get()).forEach(snapReport => {
+                if (snapReport.key !== 'total')
+                    totalEachDevice[snapReport.key as string] += snapReport.val() as number;
             });
             await Object.values(totalEachDevice).forEach(val => {
                 total += val as number;
-            })
-            await reportSchema.update({ total: total, totalEachDevice: totalEachDevice });
+            });
+            await reSchema.update(totalEachDevice);
+            await reSchema.update({ total: total });
         }
         else {
             deviceObj[key] = date.getTime();
@@ -72,7 +68,7 @@ export class RoomController {
         this.router.patch(this.path + "/switchDeviceStatus", auth, roomPermission(), this.switchDeviceStatus);
         this.router.put(this.path + "/switchAllDevicesStatus/:id", auth, roomPermission(), this.switchAllDevicesStatus);
         this.router.post(this.path + "/sendDevicesStatus", auth, roomPermission(), this.sendDevicesStatus);
-        this.router.post(this.path , auth, roomPermission(), this.importRooms);
+        this.router.post(this.path, auth, roomPermission(), this.importRooms);
         this.router.get(this.path + "/countNumberTurnOnDevices", auth, roomPermission(), this.countNumberTurnOnDevices);
         // this.router.get(this.path + "/countNumberTurnOnDevices", auth, roomPermission(), this.countNumberTurnOnDevices);
     }
