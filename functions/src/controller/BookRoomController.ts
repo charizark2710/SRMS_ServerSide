@@ -4,6 +4,8 @@ import notification from './NotificationManagement'
 import auth from './Authenticate';
 import authorized from './Authorized';
 import { parse } from 'cookie';
+import { Calendar, calendarSchema } from '../model/Calendar';
+import { BookingRoom } from '../model/BookingRoom';
 
 
 export class BookRoomController {
@@ -326,15 +328,14 @@ export class BookRoomController {
     getAvailableRooms = async (request: express.Request, response: express.Response) => {
         try {
             // let result;
-            let reqDate: number, reqStartTime: number, reqEndTime: number, busyRoom: any[]=[], allRooms: any[]=[], result: any[]=[]
+            let fullDate:string='', reqStartTime: number, reqEndTime: number, busyRoom: any[]=[], allRooms: any[]=[], result: any[]=[]
             const date = request.query.date?.toString();
             const qstartTime = request.query.startTime?.toString();
             const qendTime = request.query.endTime?.toString();
 
             const tempFullDate = date?.split("-");
             if (tempFullDate) {
-                let fullDate = tempFullDate[0] + tempFullDate[1] + tempFullDate[2];
-                reqDate = parseInt(fullDate)
+                fullDate = tempFullDate[0] + tempFullDate[1] + tempFullDate[2];
             }
             const tempStartTime = qstartTime?.split(":");
             if (tempStartTime) {
@@ -348,11 +349,34 @@ export class BookRoomController {
             }
 
 
+            (await calendarSchema.child(fullDate).get()).forEach(snap => {
+                const value: Calendar = snap.val();
+                const from = parseInt(value.from);
+                const to = parseInt(value.to);
+                if (!value.isDone) {
+                    if (value.date === fullDate) {
+                        if (reqStartTime === from || reqEndTime === to) {
+                            busyRoom.push(value.room)
+                        } else if (reqStartTime > from && reqStartTime < to) {
+                            busyRoom.push(value.room)
+                        } else if (reqEndTime > from && reqEndTime < to) {
+                            busyRoom.push(value.room)
+                        }
+                        else if (reqStartTime < from && reqEndTime > to) {
+                            busyRoom.push(value.room)
+                        }
+                    }
+                }
+            });
+
             (await db.ref('booking').get()).forEach(snap => {
-                const value = snap.val();
+                const value:BookingRoom = snap.val();
                 const startTime = parseInt(value.startTime);
                 const endTime = parseInt(value.endTime);
-                if (value.date == reqDate.toString && (value.status == "pending" || value.status == "accepted")) {
+
+                console.log(value.date === fullDate && value.status === "pending");
+                
+                if (value.date === fullDate && value.status === "pending") {
                     if (reqStartTime === startTime || reqEndTime === endTime) {
                         busyRoom.push(value.roomName)
                     } else if (reqStartTime > startTime && reqStartTime < endTime) {
@@ -393,6 +417,5 @@ export class BookRoomController {
             response.status(500).send(err);
         }
     }
-
 
 }

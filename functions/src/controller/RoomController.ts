@@ -72,6 +72,7 @@ export class RoomController {
         this.router.patch(this.path + "/switchDeviceStatus", auth, roomPermission(), this.switchDeviceStatus);
         this.router.put(this.path + "/switchAllDevicesStatus/:id", auth, roomPermission(), this.switchAllDevicesStatus);
         this.router.post(this.path + "/sendDevicesStatus", auth, roomPermission(), this.sendDevicesStatus);
+        this.router.post(this.path , auth, roomPermission(), this.importRooms);
         this.router.get(this.path + "/countNumberTurnOnDevices", auth, roomPermission(), this.countNumberTurnOnDevices);
         // this.router.get(this.path + "/countNumberTurnOnDevices", auth, roomPermission(), this.countNumberTurnOnDevices);
     }
@@ -172,6 +173,27 @@ export class RoomController {
                 }
             });
             return response.json(devices);
+        } catch (error) {
+            response.status(500).send(error);
+        }
+    }
+
+    importRooms = async (request: express.Request, response: express.Response) => {
+        try {
+            let rooms = request.body;
+            if (rooms) {
+                for (let index = 0; index < rooms.length; index++) {
+                    const value = rooms[index];
+                    await roomSchema.child(value.room).child('device').set(
+                        {
+                            conditioner: 0,
+                            fan: 0,
+                            light: 0,
+                            powerPlug: 0
+                        })
+                }
+            }
+            return response.status(200).json(rooms.length);
         } catch (error) {
             response.status(500).send(error);
         }
