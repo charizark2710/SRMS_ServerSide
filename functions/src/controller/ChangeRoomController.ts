@@ -44,26 +44,31 @@ export class ChangeRoomController {
             const fullTime = parseInt(tempFullTime);
 
 
-            (await calendarSchema.get()).forEach(snapshot => {
-                if (snapshot.key == fullDate) {
-                    snapshot.forEach((calendar) => {
-                        //tìm room hiện tại của current user
-                        if (calendar.val().userId == currentUser) {
-                            let from = parseInt(calendar.val().from)
-                            let to = parseInt(calendar.val().to)
-                            if (fullTime >= from && fullTime <= to && !calendar.val().isDone) {
-                                result = {
-                                    id: calendar.key,
-                                    room: calendar.val().room,
-                                    from: calendar.val().from,
-                                    date: calendar.val().date,
-                                    to: calendar.val().to,
-                                }
+            (await calendarSchema.child(fullDate).get()).forEach(snapshot => {
+                // if (snapshot.key == fullDate) {
+                if (snapshot) {
+                    let value = snapshot.val();
+                    // console.log(snap);
+                    //tìm room hiện tại của current user
+                    if (value.userId == currentUser) {
+                        let from = parseInt(value.from)
+                        let to = parseInt(value.to)
+                        if (fullTime >= from && fullTime <= to && !value.isDone) {
+                            result = {
+                                id: snapshot.key,
+                                room: value.room,
+                                from: value.from,
+                                date: value.date,
+                                to: value.to,
                             }
                         }
-                    });
+                    }
+
                 }
-            })
+
+            }
+                // }
+            )
 
             return response.status(200).json(result);
         } catch (error) {
@@ -80,7 +85,7 @@ export class ChangeRoomController {
     //1. send request to change room.
     sendChangeRoomRequest = async (request: express.Request, response: express.Response) => {
         try {
-            const data = request.body; //id trong calendar, userId, room, date
+            const data = request.body; //id trong calendar, userId, room, date, reason
 
             //tạo ID
             const time = new Date();
@@ -101,6 +106,10 @@ export class ChangeRoomController {
             const fullTime = year.concat(month, date) + "-" + hours.concat(min, sec, ms);
             const id = data.userId.toString() + '-' + fullTime;//tránh trùng lịch bị overrride + dễ truy vấn khi xem chi tiết
 
+            const changeDate = data.date;
+            const tempFullDate = changeDate.split("-");
+            const currentDate = tempFullDate[0] + tempFullDate[1] + tempFullDate[2];
+
             //gửi cho admin
             notification.sendMessage({
                 message: ' sent a request to change room ' + data.room,
@@ -109,10 +118,10 @@ export class ChangeRoomController {
                 sendAt: fullTime,
                 isRead: false,
                 id: id,
-                url: "/changeRoomRequest/" + data.id,
+                url: "/changeRoomRequest/" + currentDate +"~"+data.calendarId,
                 isValid: true,
             });
-            //gửi cho chính user đặt phòng
+            //gửi cho chính user đổi phòng
             notification.sendMessage({
                 message: 'Your request to change room ' + data.room + ' is being processed',
                 receiver: data.userId,
@@ -121,6 +130,8 @@ export class ChangeRoomController {
                 isRead: false,
                 id: id,
             });
+
+            await calendarSchema.child(currentDate).child(data.calendarId).update({ reason: data.reasonToChange });
 
             return response.status(200).json("ok");
         } catch (err) {
@@ -206,7 +217,7 @@ export class ChangeRoomController {
                         const val: Calendar = snapshot.val();
                         const userName = val.userName;
                         const userId = val.userId;
-                        
+
                         //4.2 update isDone trong calendar
                         calendarSchema.child(date).child(data.calendarId).update({
                             isDone: true
@@ -222,10 +233,10 @@ export class ChangeRoomController {
                             userId: userId,
                             userName: userName,//
                         });
-                        
+
                         //4.4 gửi noti cho user
                         notification.sendMessage({
-                            message: 'You are accepted to change from ' + data.room + ' to '+data.newRoom,
+                            message: 'You are accepted to change from ' + data.room + ' to ' + data.newRoom,
                             receiver: userId,
                             sender: "admin",
                             sendAt: fullTime,
