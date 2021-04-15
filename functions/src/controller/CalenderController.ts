@@ -156,6 +156,7 @@ export default class CalendarController {
         }
     }
 
+
     editSchedule = async (request: express.Request, response: express.Response) => {
         try {
             const id = request.params.id;
