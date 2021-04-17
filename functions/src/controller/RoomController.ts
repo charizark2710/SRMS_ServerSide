@@ -61,6 +61,7 @@ export class RoomController {
         this.router.post(this.path + "/sendDevicesStatus", auth, roomPermission(), this.sendDevicesStatus);
         this.router.post(this.path , auth, roomPermission(), this.importRooms);
         this.router.get(this.path + "/countNumberTurnOnDevices", auth, roomPermission(), this.countNumberTurnOnDevices);
+        this.router.get(this.path + "/getUsingRooms", auth, roomPermission(), this.getUsingRooms);
         // this.router.get(this.path + "/countNumberTurnOnDevices", auth, roomPermission(), this.countNumberTurnOnDevices);
     }
 
@@ -156,7 +157,7 @@ export class RoomController {
                 }
                 if (value.light === 1 || value.light === 0) {
                     devices.totalLight++;
-                    if (snapshot.val().light === 1) {
+                    if (value.light === 1) {
                         devices.onLight++;
                     }
                 }
@@ -183,6 +184,24 @@ export class RoomController {
                 }
             }
             return response.status(200).json(rooms.length);
+        } catch (error) {
+            response.status(500).send(error);
+        }
+    }
+
+    getUsingRooms=async(request:express.Request, response:express.Response)=>{
+        try {
+            let result:string[]=[];
+            (await roomSchema.get()).forEach(snap=>{
+                let device:Room=snap.val().device;
+                let key=snap.key;
+                if(device.conditioner ===1 || device.light ===1 || device.powerPlug ===1 || device.fan ===1){
+                    result.push(key as string);
+                }
+            })
+            console.log(result);
+            
+            return response.status(200).json(result)
         } catch (error) {
             response.status(500).send(error);
         }
