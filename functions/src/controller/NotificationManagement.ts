@@ -1,4 +1,4 @@
-import { messaging, db } from '../connector/configFireBase'
+import { db } from '../connector/configFireBase'
 import * as express from 'express';
 import message from '../model/Message'
 

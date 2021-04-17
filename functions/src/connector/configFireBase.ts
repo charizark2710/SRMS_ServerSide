@@ -8,10 +8,14 @@ const adminstrator = admin.initializeApp({
     }),
     databaseURL: functions.config().service.database_url,
 });
-
 const adminAuth = adminstrator.auth();
 const db = admin.database();
-const messaging = admin.messaging();
 db.goOnline();
-console.log("connected");
-export { adminAuth, adminstrator, db, messaging }
+db.ref('.info/connected').on('value', (snap) => {
+    if (snap.val() === true) {
+        console.log("connected");
+    } else {
+        console.log("not connected");
+    }
+});
+export { adminAuth, adminstrator, db }
