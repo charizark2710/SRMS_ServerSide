@@ -30,9 +30,7 @@
     "firebase-functions": "^3.11.0",
     "firebase-functions-test": "^0.2.0",
     "firebase-tools": "^9.6.1",
-    "jsonwebtoken": "^8.5.1",
-    "node-html-parser": "^2.0.2",
-    "node-media-server": "^2.2.4"
+    "jsonwebtoken": "^8.5.1"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.2",

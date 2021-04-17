@@ -25,7 +25,7 @@ export class testPose {
             }).then(pose => {
                 let checkRoom: boolean = false;
                 for (const p of pose) {
-                    if (p.score > 0.4) {
+                    if (p.score > 0.3) {
                         checkRoom = true;
                         break;
                     }
