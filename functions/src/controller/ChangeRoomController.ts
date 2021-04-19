@@ -45,12 +45,12 @@ export class ChangeRoomController {
 
 
             (await calendarSchema.child(fullDate).get()).forEach(snapshot => {
-                // if (snapshot.key == fullDate) {
+                // if (snapshot.key === fullDate) {
                 if (snapshot) {
                     let value = snapshot.val();
                     // console.log(snap);
                     //tìm room hiện tại của current user
-                    if (value.userId == currentUser) {
+                    if (value.userId === currentUser) {
                         let from = parseInt(value.from)
                         let to = parseInt(value.to)
                         if (fullTime >= from && fullTime <= to && !value.isDone) {
@@ -118,9 +118,9 @@ export class ChangeRoomController {
 
                     (await db.ref('booking').get()).forEach((snap: any) => {
                         let snapValue = snap.val();
-                        if (snapValue.startTime == snapShotValue.from && snapValue.endTime == snapShotValue.to &&
-                            snapValue.date == snapShotValue.date && snapValue.status == "accepted" &&
-                            snapValue.roomName == snapShotValue.room && snap.key.split("-")[0] == snapShotValue.userId) {
+                        if (snapValue.startTime === snapShotValue.from && snapValue.endTime === snapShotValue.to &&
+                            snapValue.date === snapShotValue.date && snapValue.status === "accepted" &&
+                            snapValue.roomName === snapShotValue.room && snap.key.split("-")[0] === snapShotValue.userId) {
                             currentBookingId = snap.key;
                             return true;
                         }
@@ -220,17 +220,17 @@ export class ChangeRoomController {
 
             isOcc = (await calendarSchema.child(fullDate).get()).forEach(snap => {
                 const value: Calendar = snap.val();
-                const from = parseInt(value.from);
-                const to = parseInt(value.to);
+                const valFrom = parseInt(value.from);
+                const valTo = parseInt(value.to);
                 if (!value.isDone) {
                     if (value.date === fullDate && value.room === data.newRoom) {
-                        if (reqFrom === from || reqTo === to) {
+                        if (reqFrom === valFrom || reqTo === valTo) {
                             return true;
-                        } else if (reqFrom > from && reqFrom < to) {
+                        } else if (reqFrom > valFrom && reqFrom < valTo) {
                             return true;
-                        } else if (reqTo > from && reqTo < to) {
+                        } else if (reqTo > valFrom && reqTo < valTo) {
                             return true;
-                        } else if (reqFrom < from && reqTo > to) {
+                        } else if (reqFrom < valFrom && reqTo > valTo) {
                             return true;
                         }
                     }
@@ -266,9 +266,9 @@ export class ChangeRoomController {
 
                                 (await db.ref('booking').get()).forEach((snap: any) => {
                                     let snapValue = snap.val();
-                                    if (snapValue.startTime == reqFrom && snapValue.endTime == reqTo &&
-                                        snapValue.date == fullDate && snapValue.status == "changing" &&
-                                        snapValue.roomName == data.room && snap.key.split("-")[0] == userId) {
+                                    if (snapValue.startTime === reqFrom && snapValue.endTime === reqTo &&
+                                        snapValue.date === fullDate && snapValue.status === "changing" &&
+                                        snapValue.roomName === data.room && snap.key.split("-")[0] === userId) {
                                         currentBookingId = snap.key;
                                         return true;
                                     }

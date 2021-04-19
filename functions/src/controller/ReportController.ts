@@ -5,7 +5,6 @@ import auth from './Authenticate';
 import authorized from './Authorized';
 import notification from './NotificationManagement'
 import { roomSchema, Room } from '../model/Room'
-import { data } from '@tensorflow/tfjs';
 
 export class ReportController {
     public router = express.Router();

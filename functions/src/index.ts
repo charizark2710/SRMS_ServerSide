@@ -8,6 +8,38 @@ import * as posenet from '@tensorflow-models/posenet'
 import { db } from './connector/configFireBase'
 import notification from './controller/NotificationManagement'
 import Schedule from './schedule/schedule'
+import * as dgram from 'dgram'
+
+const socket = dgram.createSocket({ type: 'udp4', reuseAddr: true }, (buffer, sender) => {
+    const message = buffer.toString();
+    console.log({
+        kind: "UDP_MESSAGE",
+        message,
+        sender
+    });
+
+    socket.send(message.toUpperCase(), sender.port, sender.address, error => {
+        if (error) {
+            console.error(error);
+        } else {
+            console.log({
+                kind: "RESPOND",
+                message: message.toUpperCase(),
+                sender
+            });
+            socket.send("Respond", sender.port, sender.address, err => {
+                console.log(err ? err : "Sended");
+                // socket.close();
+            });
+        }
+    });
+});
+
+
+socket.on('listening', () => {
+    const address = socket.address();
+    console.log(`server listening ${address.address}:${address.port}`);
+});
 
 const app = express();
 
@@ -32,7 +64,7 @@ app.use((req, res, next) => {
     // Website you wish to allow to connect
     const allowOrigin = ['https://learning-5071c.web.app', 'http://localhost:3000'];
     const origin = req.headers.origin;
-    if(allowOrigin.includes(origin as string)){
+    if (allowOrigin.includes(origin as string)) {
         // res.setHeader('Access-Control-Allow-Origin', 'https://learning-5071c.web.app');
         res.setHeader('Access-Control-Allow-Origin', origin as string);
     }
@@ -75,4 +107,5 @@ process.on('exit', function (code) {
 });
 
 app.listen(5000);
+socket.bind(5000);
 exports.app = functions.https.onRequest(app);
