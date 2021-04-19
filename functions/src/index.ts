@@ -3,12 +3,12 @@ import express from 'express';
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser"
 import { Route } from './router/route'
-import { mediaServer } from './media-server/media'
-import * as posenet from '@tensorflow-models/posenet'
 import { db } from './connector/configFireBase'
 import notification from './controller/NotificationManagement'
 import Schedule from './schedule/schedule'
 import * as dgram from 'dgram'
+import { mediaServer } from './media-server/media'
+import * as posenet from '@tensorflow-models/posenet'
 
 const socket = dgram.createSocket({ type: 'udp4', reuseAddr: true }, (buffer, sender) => {
     const message = buffer.toString();
@@ -43,16 +43,35 @@ socket.on('listening', () => {
 
 const app = express();
 
-let media: mediaServer;
-posenet.load({
-    architecture: "MobileNetV1",
-    outputStride: 16,
-    multiplier: 0.75,
-    quantBytes: 2,
-    inputResolution: { width: 640, height: 480 }
-}).then(async net => {
-    media = new mediaServer(net);
-    media.dectectMedia();
+db.ref('.info/connected').on('value', async (snap) => {
+    if (snap.val() === true) {
+        console.log("connected");
+        const routes = new Route(app);
+        routes.routers();
+        const s: Schedule = new Schedule();
+        notification.receiveMessage();
+        let media: mediaServer;
+        while (true) {
+            try {
+                console.log("Waiting....");
+                const net = await posenet.load({
+                    architecture: "MobileNetV1",
+                    outputStride: 16,
+                    multiplier: 0.75,
+                    quantBytes: 2,
+                    inputResolution: { width: 640, height: 480 }
+                });
+                console.log("loaded");
+                media = new mediaServer(net);
+                media.dectectMedia();
+                break;
+            } catch (error) {
+                console.log(error);
+            }
+        }
+    } else {
+        console.log("not connected");
+    }
 });
 
 app.use(cookieParser());
@@ -84,15 +103,7 @@ app.use((req, res, next) => {
     next();
 });
 
-const s: Schedule = new Schedule();
-
-notification.receiveMessage();
-
-const routes = new Route(app);
-routes.routers();
-
 process.on('SIGHUP', function () {
-    db.goOffline();
     process.exit();
 });
 
@@ -102,7 +113,6 @@ process.on('SIGINT', function (code) {
 });
 
 process.on('exit', function (code) {
-    db.goOffline();
     console.log("Exit");
 });
 

@@ -290,14 +290,11 @@ export class ChangeRoomController {
                                 });
                             }
                         });
-
-
-
-
                     } else {
                         console.log("No data available");
                     }
                 }).catch((error) => {
+                    response.status(500).json(error);
                     console.error(error);
                 });
             } else {

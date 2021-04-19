@@ -35,23 +35,22 @@ export class ReportController {
             const reqToDate = parseInt(toDate)
 
             for (let index = reqFromDate; index <= reqToDate; index++) {
-                await db.ref('report').child(index.toString()).get().then(snapshot => {
-                    if (snapshot) {
-                        const date = parseInt(snapshot.key as string);
-                        let dateFormat=date.toString().substring(0,4)+"/"+date.toString().substring(4,6)+"/"+date.toString().substring(6)
-                        let value = snapshot.val();
-                        if (index === date) {
-                            let data = {
-                                date: dateFormat,
-                                light: value.light!==null? parseInt(value.light):0,
-                                fan: value.fan!==null?parseInt(value.fan):0,
-                                powerPlug: value.powerPlug!==null?parseInt(value.powerPlug):0,
-                                conditioner: value.conditioner!==null?parseInt(value.conditioner):0,
-                            }
-                            result.push(data);
+                const snapshot = await db.ref('report').child(index.toString()).get();
+                if (snapshot) {
+                    const date = parseInt(snapshot.key as string);
+                    let dateFormat = date.toString().substring(0, 4) + "/" + date.toString().substring(4, 6) + "/" + date.toString().substring(6)
+                    let value = snapshot.val();
+                    if (index === date) {
+                        let data = {
+                            date: dateFormat,
+                            light: value.light !== null ? parseInt(value.light) : 0,
+                            fan: value.fan !== null ? parseInt(value.fan) : 0,
+                            powerPlug: value.powerPlug !== null ? parseInt(value.powerPlug) : 0,
+                            conditioner: value.conditioner !== null ? parseInt(value.conditioner) : 0,
                         }
+                        result.push(data);
                     }
-                });
+                }
             }
             console.log(result);
 

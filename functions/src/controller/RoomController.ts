@@ -61,6 +61,8 @@ export class RoomController {
             snap.forEach(childSnap => {
                 roomRef.push(childSnap.child('device').ref);
             })
+        }).catch(e => {
+            console.log(e);
         });
     }
 
@@ -196,18 +198,18 @@ export class RoomController {
         }
     }
 
-    getUsingRooms=async(request:express.Request, response:express.Response)=>{
+    getUsingRooms = async (request: express.Request, response: express.Response) => {
         try {
-            let result:string[]=[];
-            (await roomSchema.get()).forEach(snap=>{
-                let device:Room=snap.val().device;
-                let key=snap.key;
-                if(device.conditioner ===1 || device.light ===1 || device.powerPlug ===1 || device.fan ===1){
+            let result: string[] = [];
+            (await roomSchema.get()).forEach(snap => {
+                let device: Room = snap.val().device;
+                let key = snap.key;
+                if (device.conditioner === 1 || device.light === 1 || device.powerPlug === 1 || device.fan === 1) {
                     result.push(key as string);
                 }
             })
             console.log(result);
-            
+
             return response.status(200).json(result)
         } catch (error) {
             response.status(500).send(error);

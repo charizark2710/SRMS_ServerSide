@@ -9,6 +9,7 @@ let t: any = undefined;
 
 export default class Schedule {
     constructor() {
+        console.log("Start Timer");
         this.setSchedule();
     }
 
