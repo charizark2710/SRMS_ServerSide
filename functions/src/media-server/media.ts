@@ -16,6 +16,7 @@ export class mediaServer {
 
     async dectectMedia() {
         try {
+            console.log("Detect start");
             const $this = this;
             this.camera.push = function (arg) {
                 const loadImage = async function (uri: string) {

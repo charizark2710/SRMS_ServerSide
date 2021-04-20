@@ -3,49 +3,53 @@ import auth from './Authenticate';
 import { roomPermission } from './Authorized';
 import { roomSchema, Room } from '../model/Room'
 import { db } from '../connector/configFireBase';
+import { Reference } from 'firebase-admin/node_modules/@firebase/database-types/index'
 
-export async function updateReport(room: string, device: Room) {
-    const date = new Date();
-    const reportSchema = db.ref('report');
-    const tempM = (date.getMonth() + 1).toString();
-    const tempD = date.getDate().toString();
-    const month = tempM.length === 2 ? tempM : '0' + tempM;
-    const day = tempD.length === 2 ? tempD : '0' + tempD;
-    const year = date.getFullYear();
-    const roSchema = roomSchema.child(room).child('report');
-    const reSchema = reportSchema.child(room).child(year + month + day);
-    const currentRoomReport = (await roSchema.get()).val();
-    const currentReport = (await reSchema.get()).val();
-    for (const [key, value] of Object.entries(device)) {
+const roomRef: Reference[] = [];
+
+roomRef.push = function (arg) {
+    arg.on('child_changed', async snap => {
+
+        const date = new Date();
+        const reportSchema = db.ref('report');
+        const tempM = (date.getMonth() + 1).toString();
+        const tempD = date.getDate().toString();
+        const month = tempM.length === 2 ? tempM : '0' + tempM;
+        const day = tempD.length === 2 ? tempD : '0' + tempD;
+        const year = date.getFullYear();
+
+        const key = snap.key as string;
+        const value = snap.val();
+
+        const roSchema = roomSchema.child(arg.parent?.key as string).child('report');
+        const reSchema = reportSchema.child(year + month + day);
+
+        const currentRoomReport = (await roSchema.get()).val();
+        const currentReport = (await reSchema.get()).val();
+
         const deviceObj: any = {};
         const reportObj: any = {};
         if (value === 0) {
-            deviceObj[key] = 0;
             reportObj[key] = (currentReport && currentReport[key]) ? currentReport[key] + (date.getTime() - currentRoomReport[key]) : 0 + (date.getTime() - currentRoomReport[key]);
-            roSchema.update(deviceObj);
             reSchema.update(reportObj);
             let totalEachDevice: any = { fan: 0, light: 0, powerPlug: 0, conditioner: 0 };
             let total = 0;
-
-            (await reportSchema.get()).forEach(snap => {
-                if (snap.val().key !== 'totalEachDevice') {
-                    for (const value of Object.values(snap.val())) {
-                        for (const [key, val] of Object.entries(value as any)) {
-                            totalEachDevice[key] += val as number;
-                        }
-                    }
-                }
+            (await reSchema.get()).forEach(snapReport => {
+                if (snapReport.key !== 'total')
+                    totalEachDevice[snapReport.key as string] += snapReport.val() as number;
             });
             await Object.values(totalEachDevice).forEach(val => {
                 total += val as number;
-            })
-            await reportSchema.update({ total: total, totalEachDevice: totalEachDevice });
+            });
+            await reSchema.update(totalEachDevice);
+            await reSchema.update({ total: total });
         }
         else {
             deviceObj[key] = date.getTime();
             roSchema.update(deviceObj);
         }
-    }
+    });
+    return Array.prototype.push.apply(this);
 }
 
 export class RoomController {
@@ -53,13 +57,22 @@ export class RoomController {
     path = '/room'
     constructor() {
         this.init();
+        roomSchema.get().then(snap => {
+            snap.forEach(childSnap => {
+                roomRef.push(childSnap.child('device').ref);
+            })
+        }).catch(e => {
+            console.log(e);
+        });
     }
 
     init() {
         this.router.patch(this.path + "/switchDeviceStatus", auth, roomPermission(), this.switchDeviceStatus);
         this.router.put(this.path + "/switchAllDevicesStatus/:id", auth, roomPermission(), this.switchAllDevicesStatus);
         this.router.post(this.path + "/sendDevicesStatus", auth, roomPermission(), this.sendDevicesStatus);
+        this.router.post(this.path, auth, roomPermission(), this.importRooms);
         this.router.get(this.path + "/countNumberTurnOnDevices", auth, roomPermission(), this.countNumberTurnOnDevices);
+        this.router.get(this.path + "/getUsingRooms", auth, roomPermission(), this.getUsingRooms);
         // this.router.get(this.path + "/countNumberTurnOnDevices", auth, roomPermission(), this.countNumberTurnOnDevices);
     }
 
@@ -71,7 +84,6 @@ export class RoomController {
             const room = response.locals.room;
             const device: Room = data.device;
             if (data.roomName === room || response.locals.role === 'admin') {
-                updateReport(data.roomName, device);
                 await roomSchema.child(data.roomName).child('device').update(device);
                 return response.send("ok");
             } else {
@@ -90,7 +102,6 @@ export class RoomController {
             const status = parseInt(request.query.q as string);
             if (reqRoom === room || response.locals.role === 'admin') {
                 const devices: Room = { conditioner: status, fan: status, light: status, powerPlug: status };
-                updateReport(room, devices);
                 await roomSchema.child(reqRoom).child('device').set(devices);
                 return response.send("ok");
             } else {
@@ -155,12 +166,51 @@ export class RoomController {
                 }
                 if (value.light === 1 || value.light === 0) {
                     devices.totalLight++;
-                    if (snapshot.val().light === 1) {
+                    if (value.light === 1) {
                         devices.onLight++;
                     }
                 }
             });
             return response.json(devices);
+        } catch (error) {
+            response.status(500).send(error);
+        }
+    }
+
+    importRooms = async (request: express.Request, response: express.Response) => {
+        try {
+            let rooms = request.body;
+            if (rooms) {
+                for (let index = 0; index < rooms.length; index++) {
+                    const value = rooms[index];
+                    await roomSchema.child(value.room).child('device').set(
+                        {
+                            conditioner: 0,
+                            fan: 0,
+                            light: 0,
+                            powerPlug: 0
+                        })
+                }
+            }
+            return response.status(200).json(rooms.length);
+        } catch (error) {
+            response.status(500).send(error);
+        }
+    }
+
+    getUsingRooms = async (request: express.Request, response: express.Response) => {
+        try {
+            let result: string[] = [];
+            (await roomSchema.get()).forEach(snap => {
+                let device: Room = snap.val().device;
+                let key = snap.key;
+                if (device.conditioner === 1 || device.light === 1 || device.powerPlug === 1 || device.fan === 1) {
+                    result.push(key as string);
+                }
+            })
+            console.log(result);
+
+            return response.status(200).json(result)
         } catch (error) {
             response.status(500).send(error);
         }

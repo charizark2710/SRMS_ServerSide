@@ -43,7 +43,8 @@ export class UserController {
                         if (result.length === data.length) {
                             return response.json(result)
                         }
-
+                    }).catch(e => {
+                        return response.status(500).json(e)
                     })
                 })
             }
@@ -74,7 +75,7 @@ export class UserController {
     getBannedUsers = async (request: express.Request, response: express.Response) => {
         try {
             var result: any[] = [];
-            await userSchema.orderByChild('banned').equalTo(true).on('child_added',snapshot => {
+            await userSchema.orderByChild('banned').equalTo(true).on('child_added', snapshot => {
                 const value = snapshot.val();
                 result.push(value);
             });
@@ -88,7 +89,7 @@ export class UserController {
     getUnbannedUsers = async (request: express.Request, response: express.Response) => {
         try {
             var result: any[] = [];
-            await userSchema.orderByChild('banned').equalTo(false).on('child_added',snapshot => {
+            await userSchema.orderByChild('banned').equalTo(false).on('child_added', snapshot => {
                 const value = snapshot.val();
                 result.push(value.email);
             });

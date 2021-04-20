@@ -1,5 +1,6 @@
 import * as functions from 'firebase-functions';
 import admin from "firebase-admin";
+
 const adminstrator = admin.initializeApp({
     credential: admin.credential.cert({
         privateKey: functions.config().service.private_key.replace(/\\n/g, '\n'),
@@ -8,10 +9,8 @@ const adminstrator = admin.initializeApp({
     }),
     databaseURL: functions.config().service.database_url,
 });
-
 const adminAuth = adminstrator.auth();
 const db = admin.database();
-const messaging = admin.messaging();
 db.goOnline();
-console.log("connected");
-export { adminAuth, adminstrator, db, messaging }
+
+export { adminAuth, adminstrator, db }

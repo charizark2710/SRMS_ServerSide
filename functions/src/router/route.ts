@@ -9,6 +9,7 @@ import { RoomController } from '../controller/RoomController'
 import {ReportErrorController} from '../controller/ReportErrorController'
 import {RequestListController} from '../controller/RequestListController'
 import {ChangeRoomController} from '../controller/ChangeRoomController'
+import {ReportController} from '../controller/ReportController'
 
 export class Route {
     app: express.Application;
@@ -22,6 +23,7 @@ export class Route {
     ReportErrorController = new ReportErrorController();
     RequestListController = new RequestListController();
     ChangeRoomController = new ChangeRoomController();
+    ReportController = new ReportController();
     constructor(app: express.Application) {
         this.app = app;
     }
@@ -39,5 +41,6 @@ export class Route {
         this.app.use('/', this.ReportErrorController.router);
         this.app.use('/', this.RequestListController.router);
         this.app.use('/', this.ChangeRoomController.router);
+        this.app.use('/', this.ReportController.router);
     }
 }

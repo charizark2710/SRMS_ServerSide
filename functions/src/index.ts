@@ -3,25 +3,76 @@ import express from 'express';
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser"
 import { Route } from './router/route'
-import { mediaServer } from './media-server/media'
-import * as posenet from '@tensorflow-models/posenet'
 import { db } from './connector/configFireBase'
 import notification from './controller/NotificationManagement'
 import Schedule from './schedule/schedule'
+import * as dgram from 'dgram'
+import { mediaServer } from './media-server/media'
+import * as posenet from '@tensorflow-models/posenet'
+
+const socket = dgram.createSocket({ type: 'udp4', reuseAddr: true }, (buffer, sender) => {
+    const message = buffer.toString();
+    console.log({
+        kind: "UDP_MESSAGE",
+        message,
+        sender
+    });
+
+    socket.send(message.toUpperCase(), sender.port, sender.address, error => {
+        if (error) {
+            console.error(error);
+        } else {
+            console.log({
+                kind: "RESPOND",
+                message: message.toUpperCase(),
+                sender
+            });
+            socket.send("Respond", sender.port, sender.address, err => {
+                console.log(err ? err : "Sended");
+                // socket.close();
+            });
+        }
+    });
+});
+
+
+socket.on('listening', () => {
+    const address = socket.address();
+    console.log(`server listening ${address.address}:${address.port}`);
+});
 
 const app = express();
 
-// let media: mediaServer;
-// posenet.load({
-//     architecture: "MobileNetV1",
-//     outputStride: 16,
-//     multiplier: 0.75,
-//     quantBytes: 2,
-//     inputResolution: { width: 640, height: 480 }
-// }).then(async net => {
-//     media = new mediaServer(net);
-//     media.dectectMedia();
-// });
+db.ref('.info/connected').on('value', async (snap) => {
+    if (snap.val() === true) {
+        console.log("connected");
+        const routes = new Route(app);
+        routes.routers();
+        const s: Schedule = new Schedule();
+        notification.receiveMessage();
+        let media: mediaServer;
+        while (true) {
+            try {
+                console.log("Waiting....");
+                const net = await posenet.load({
+                    architecture: "MobileNetV1",
+                    outputStride: 16,
+                    multiplier: 0.75,
+                    quantBytes: 2,
+                    inputResolution: { width: 640, height: 480 }
+                });
+                console.log("loaded");
+                media = new mediaServer(net);
+                media.dectectMedia();
+                break;
+            } catch (error) {
+                console.log(error);
+            }
+        }
+    } else {
+        console.log("not connected");
+    }
+});
 
 app.use(cookieParser());
 
@@ -32,7 +83,7 @@ app.use((req, res, next) => {
     // Website you wish to allow to connect
     const allowOrigin = ['https://learning-5071c.web.app', 'http://localhost:3000'];
     const origin = req.headers.origin;
-    if(allowOrigin.includes(origin as string)){
+    if (allowOrigin.includes(origin as string)) {
         // res.setHeader('Access-Control-Allow-Origin', 'https://learning-5071c.web.app');
         res.setHeader('Access-Control-Allow-Origin', origin as string);
     }
@@ -52,15 +103,7 @@ app.use((req, res, next) => {
     next();
 });
 
-const s: Schedule = new Schedule();
-
-notification.receiveMessage();
-
-const routes = new Route(app);
-routes.routers();
-
 process.on('SIGHUP', function () {
-    db.goOffline();
     process.exit();
 });
 
@@ -70,9 +113,9 @@ process.on('SIGINT', function (code) {
 });
 
 process.on('exit', function (code) {
-    db.goOffline();
     console.log("Exit");
 });
 
 app.listen(5000);
+socket.bind(5000);
 exports.app = functions.https.onRequest(app);
