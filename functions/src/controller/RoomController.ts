@@ -3,67 +3,12 @@ import auth from './Authenticate';
 import { roomPermission } from './Authorized';
 import { roomSchema, Room } from '../model/Room'
 import { db } from '../connector/configFireBase';
-import { Reference } from 'firebase-admin/node_modules/@firebase/database-types/index'
-
-const roomRef: Reference[] = [];
-
-roomRef.push = function (arg) {
-    arg.on('child_changed', async snap => {
-
-        const date = new Date();
-        const reportSchema = db.ref('report');
-        const tempM = (date.getMonth() + 1).toString();
-        const tempD = date.getDate().toString();
-        const month = tempM.length === 2 ? tempM : '0' + tempM;
-        const day = tempD.length === 2 ? tempD : '0' + tempD;
-        const year = date.getFullYear();
-
-        const key = snap.key as string;
-        const value = snap.val();
-
-        const roSchema = roomSchema.child(arg.parent?.key as string).child('report');
-        const reSchema = reportSchema.child(year + month + day);
-
-        const currentRoomReport = (await roSchema.get()).val();
-        const currentReport = (await reSchema.get()).val();
-
-        const deviceObj: any = {};
-        const reportObj: any = {};
-        if (value === 0) {
-            reportObj[key] = (currentReport && currentReport[key]) ? currentReport[key] + (date.getTime() - currentRoomReport[key]) : 0 + (date.getTime() - currentRoomReport[key]);
-            reSchema.update(reportObj);
-            let totalEachDevice: any = { fan: 0, light: 0, powerPlug: 0, conditioner: 0 };
-            let total = 0;
-            (await reSchema.get()).forEach(snapReport => {
-                if (snapReport.key !== 'total')
-                    totalEachDevice[snapReport.key as string] += snapReport.val() as number;
-            });
-            await Object.values(totalEachDevice).forEach(val => {
-                total += val as number;
-            });
-            await reSchema.update(totalEachDevice);
-            await reSchema.update({ total: total });
-        }
-        else {
-            deviceObj[key] = date.getTime();
-            roSchema.update(deviceObj);
-        }
-    });
-    return Array.prototype.push.apply(this);
-}
 
 export class RoomController {
     public router = express.Router();
     path = '/room'
     constructor() {
         this.init();
-        roomSchema.get().then(snap => {
-            snap.forEach(childSnap => {
-                roomRef.push(childSnap.child('device').ref);
-            })
-        }).catch(e => {
-            console.log(e);
-        });
     }
 
     init() {

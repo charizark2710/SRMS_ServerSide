@@ -40,15 +40,17 @@ export class ReportController {
                     const date = parseInt(snapshot.key as string);
                     let dateFormat = date.toString().substring(0, 4) + "/" + date.toString().substring(4, 6) + "/" + date.toString().substring(6)
                     let value = snapshot.val();
-                    if (index === date) {
-                        let data = {
-                            date: dateFormat,
-                            light: value.light !== null ? parseInt(value.light) : 0,
-                            fan: value.fan !== null ? parseInt(value.fan) : 0,
-                            powerPlug: value.powerPlug !== null ? parseInt(value.powerPlug) : 0,
-                            conditioner: value.conditioner !== null ? parseInt(value.conditioner) : 0,
+                    if (value) {
+                        if (index === date) {
+                            let data = {
+                                date: dateFormat,
+                                light: value.light ? parseInt(value.light) : 0,
+                                fan: value.fan ? parseInt(value.fan) : 0,
+                                powerPlug: value.powerPlug ? parseInt(value.powerPlug) : 0,
+                                conditioner: value.conditioner ? parseInt(value.conditioner) : 0,
+                            }
+                            result.push(data);
                         }
-                        result.push(data);
                     }
                 }
             }
