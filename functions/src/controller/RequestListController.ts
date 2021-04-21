@@ -84,7 +84,8 @@ export class RequestListController {
                         requestType: "bookRoomRequest",
                         requestTime: key,
                         status: value.status,
-                        actionNotiId:value.actionNotiId
+                        date: value.date,
+                        endTime:value.endTime
                     }
                     result.push(bookingReq);
                 }
@@ -102,7 +103,6 @@ export class RequestListController {
                         requestType: "reportErrorRequest",
                         requestTime: key,
                         status: value.status,
-                        actionNotiId:value.actionNotiId
                     }
                     result.push(bookingReq);
                 }
