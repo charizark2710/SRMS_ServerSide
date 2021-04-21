@@ -74,7 +74,6 @@ export class ReportErrorController {
                         isRead: false,
                         id: id,
                         url: "/reportErrorRequest/" + id,
-                        isValid: true,
                     });
                     //gửi cho chính user make request
                     notification.sendMessage({
@@ -142,8 +141,6 @@ export class ReportErrorController {
             await db.ref('complaint').child(reportErrId).update({
                 status: "deleted",
             }).then(function () {
-                //noti trước khi hủy trở thành invalid
-                notification.updateIsValid(actionNotiId+'');
                 //gửi cho admin
                 notification.sendMessage({
                     message: ' deleted ' + message,
@@ -153,7 +150,6 @@ export class ReportErrorController {
                     isRead: false,
                     id: id,
                     url: "/reportErrorRequest/" + reportErrId,
-                    isValid: false,
                 });
                 //gửi cho chính user make request
                 notification.sendMessage({
@@ -267,8 +263,7 @@ export class ReportErrorController {
                 if (error) {
                     response.status(500).send(error);
                 } else {
-                    //noti trước khi cập nhật trở thành invalid
-                    notification.updateIsValid(data.actionNotiId);
+                    
                     //gửi cho admin
                     notification.sendMessage({
                         message: ' changed a request to report error at room ' + data.roomName,
@@ -278,7 +273,6 @@ export class ReportErrorController {
                         isRead: false,
                         id: id,
                         url: "/reportErrorRequest/" + data.id,
-                        isValid: true,
                     });
                     //gửi cho chính user make request
                     notification.sendMessage({

@@ -25,9 +25,9 @@ export class RequestListController {
             var result: any[] = [];
             (await db.ref('notification').child('admin').get()).forEach(snapshot => {
                 const value = snapshot.val();
-                console.log(snapshot.val());
-
-                result.push(value);
+                if(value.url!==""){
+                    result.push(value);
+                }
 
             });
             response.status(200).send(result);
@@ -43,7 +43,9 @@ export class RequestListController {
             let deleteRequestIds: string[] = deleteRequest?.split(',');
             if (deleteRequestIds) {
                 for (let index = 0; index < (deleteRequestIds.length - 1); index++) {
-                    await db.ref('notification').child('admin').child(deleteRequestIds[index]).remove();
+                    await db.ref('notification').child('admin').child(deleteRequestIds[index]).update({
+                        url:""
+                    });
                 }
             }
             response.status(200).json(deleteRequestIds);

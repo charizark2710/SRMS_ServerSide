@@ -147,7 +147,6 @@ export class ChangeRoomController {
                 isRead: false,
                 id: id,
                 url: "/changeRoomRequest/" + currentDate + "~" + data.calendarId,
-                isValid: true,
             });
             //gửi cho chính user đổi phòng
             notification.sendMessage({
