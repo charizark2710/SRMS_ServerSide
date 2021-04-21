@@ -230,7 +230,7 @@ export class BookRoomController {
         try {
             const bookingId = request.params.id;
             const message = request.query.message;
-            const actionNotiId = request.query.actionNotiId;
+            const status = request.query.status;
             const userId = bookingId?.split('-')[0] || ' ';
 
             const time = new Date();
@@ -248,41 +248,78 @@ export class BookRoomController {
             const fullTime = year.concat(month, date) + "-" + hours.concat(min, sec, '000');
             const id = userId.toString() + '-' + fullTime;
 
+            //nếu đổi phòng
+            if (status === "changing") {
+                await db.ref('booking').child(bookingId).update({
+                    status: "accepted",
+                }).then(function () {
+                    //gửi cho admin
+                    notification.sendMessage({
+                        message: ' cancel changing ' + message,
+                        receiver: "admin",
+                        sender: userId,
+                        sendAt: fullTime,
+                        isRead: false,
+                        id: id,
+                        url: "/bookRoomRequest/" + bookingId,
+                        isValid: false,
+                    });
+                    //gửi cho chính user đặt phòng
+                    notification.sendMessage({
+                        message: 'You canceled changing ' + message,
+                        receiver: userId,
+                        sender: "admin",
+                        sendAt: fullTime,
+                        isRead: false,
+                        id: id,
+                    });
 
+                })
+                    .catch(function (error) {
+                        console.log("Cancel failed: " + error.message)
+                    });
+            } else {
+                await db.ref('booking').child(bookingId).update({
+                    status: "deleted",
+                }).then(function () {
+                    //nếu đã accepted phải hủy trong calendar
+                    if(status==="accepted"){
+                        let calendarId;
+                        db.ref('booking').child(bookingId).get().then(snap=>{
+                            let value=snap.val();
+                            calendarId=value.date+"/"+value.roomName+"-"+value.startTime+"-"+value.endTime;
+                        });
+                        if(calendarId){
+                            calendarSchema.child(calendarId).update({ isDone: true });
+                        }
+                    }
 
-            await db.ref('booking').child(bookingId).update({
-                status: "deleted",
-            }).then(function () {
-                //noti trước khi hủy trở thành invalid
-                notification.updateIsValid(actionNotiId + '');
+                    //gửi cho admin
+                    notification.sendMessage({
+                        message: ' cancel ' + message,
+                        receiver: "admin",
+                        sender: userId,
+                        sendAt: fullTime,
+                        isRead: false,
+                        id: id,
+                        url: "/bookRoomRequest/" + bookingId,
+                        isValid: false,
+                    });
+                    //gửi cho chính user đặt phòng
+                    notification.sendMessage({
+                        message: 'You canceled ' + message,
+                        receiver: userId,
+                        sender: "admin",
+                        sendAt: fullTime,
+                        isRead: false,
+                        id: id,
+                    });
 
-                //nếu đã accept thì hủy trong calendar
-
-                //gửi cho admin
-                notification.sendMessage({
-                    message: ' deleted ' + message,
-                    receiver: "admin",
-                    sender: userId,
-                    sendAt: fullTime,
-                    isRead: false,
-                    id: id,
-                    url: "/bookRoomRequest/" + bookingId,
-                    isValid: false,
-                });
-                //gửi cho chính user đặt phòng
-                notification.sendMessage({
-                    message: 'You deleted ' + message + " successfully",
-                    receiver: userId,
-                    sender: "admin",
-                    sendAt: fullTime,
-                    isRead: false,
-                    id: id,
-                });
-
-            })
-                .catch(function (error) {
-                    console.log("Remove failed: " + error.message)
-                });
+                })
+                    .catch(function (error) {
+                        console.log("Cancel failed: " + error.message)
+                    });
+            }
             return response.status(200).json('ok');
         } catch (err) {
             response.status(500).send(err);
@@ -472,5 +509,13 @@ export class BookRoomController {
             response.status(500).send(err);
         }
     }
+
+    //check xem user có đặt trùng lịch với chính nó k
+    //0. nhận vào userId, date, start time, endtime
+    //1. kiểm tra trong booking có trạng thái accepted/pending
+    //2. nếu là giảng viên => kiểm tra thêm trong calendar
+
+
+
 
 }

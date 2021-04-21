@@ -55,7 +55,7 @@ export class ReportErrorController {
 
             await db.ref('complaint').child(id).set({
                 roomName: data.roomName,
-                deviceNames: data.deviceNames,
+                deviceNames: deviceNames,
                 description: data.description,
                 status: "pending",
                 userId: data.userId,
@@ -67,7 +67,7 @@ export class ReportErrorController {
                 } else {
                     //gửi cho admin
                     notification.sendMessage({
-                        message: ' sent a request to report error at room ' + data.roomName,
+                        message: ' sent a request to report error at room ' + data.roomName +' ('+deviceNames+')',
                         receiver: "admin",
                         sender: data.userId,
                         sendAt: fullTime,
@@ -204,7 +204,7 @@ export class ReportErrorController {
                 } else {
                     //send noti to user
                     notification.sendMessage({
-                        message: 'Your request to report error' + ' at room ' + data.roomName + ' has been ' + data.status,
+                        message: 'We appreciate that you reported the error in room '+data.roomName,
                         receiver: data.userId,
                         sender: "admin",
                         sendAt: fullTime,

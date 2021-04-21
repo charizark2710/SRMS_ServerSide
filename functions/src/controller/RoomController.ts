@@ -73,6 +73,7 @@ export class RoomController {
         this.router.post(this.path, auth, roomPermission(), this.importRooms);
         this.router.get(this.path + "/countNumberTurnOnDevices", auth, roomPermission(), this.countNumberTurnOnDevices);
         this.router.get(this.path + "/getUsingRooms", auth, roomPermission(), this.getUsingRooms);
+        this.router.get(this.path + "/getAllRooms", auth, this.getAllRooms);
         // this.router.get(this.path + "/countNumberTurnOnDevices", auth, roomPermission(), this.countNumberTurnOnDevices);
     }
 
@@ -207,6 +208,21 @@ export class RoomController {
                 if (device.conditioner === 1 || device.light === 1 || device.powerPlug === 1 || device.fan === 1) {
                     result.push(key as string);
                 }
+            })
+            console.log(result);
+
+            return response.status(200).json(result)
+        } catch (error) {
+            response.status(500).send(error);
+        }
+    }
+
+    getAllRooms = async (request: express.Request, response: express.Response) => {
+        try {
+            let result: string[] = [];
+            (await roomSchema.get()).forEach(snap => {
+                let key = snap.key;
+                result.push(key as string);
             })
             console.log(result);
 
