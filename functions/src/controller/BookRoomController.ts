@@ -2,11 +2,8 @@ import * as express from 'express';
 import { db } from "../connector/configFireBase"
 import notification from './NotificationManagement'
 import auth from './Authenticate';
-import authorized from './Authorized';
-import { parse } from 'cookie';
 import { Calendar, calendarSchema } from '../model/Calendar';
 import { BookingRoom } from '../model/BookingRoom';
-
 
 export class BookRoomController {
     public router = express.Router();
@@ -17,12 +14,11 @@ export class BookRoomController {
 
     init() {
         this.router.post(this.path + '/add', auth, this.createBookingRoom);
-        this.router.patch(this.path + "/delete/:id", this.cancelBookingRoom);
-        this.router.patch(this.path + "/acceptOrRejectBooking", this.acceptOrRejectBooking);
-        this.router.put(this.path + "/update", this.updateBooking);
-        this.router.get(this.path + '/getAvailableRooms', this.getAvailableRooms);
-        this.router.get(this.path + '/:id', this.viewDetailBookingRoom);
-        this.router.get(this.path + '/edit/:id', this.getBookingById);
+        this.router.patch(this.path + "/delete/:id", auth, this.cancelBookingRoom);
+        this.router.put(this.path + "/update", auth, this.updateBooking);
+        this.router.get(this.path + '/getAvailableRooms', auth, this.getAvailableRooms);
+        this.router.get(this.path + '/:id', auth, this.viewDetailBookingRoom);
+        this.router.get(this.path + '/edit/:id', auth, this.getBookingById);
     }
 
     //save booking
@@ -132,98 +128,6 @@ export class BookRoomController {
         }
     }
 
-    acceptOrRejectBooking = async (request: express.Request, response: express.Response) => {
-        try {
-            const data = request.body;//id + status + roomName+date+time
-            const time = new Date();
-            const tempM = (time.getMonth() + 1).toString();
-            const tempD = time.getDate().toString();
-            const year = time.getFullYear().toString();
-            const month = tempM.length === 2 ? tempM : '0' + tempM;
-            const date = tempD.length === 2 ? tempD : '0' + tempD;
-            const tempH = time.getHours().toString();
-            const tempMin = time.getMinutes().toString();
-            const tempSec = time.getSeconds().toString();
-            const hours = tempH.length === 2 ? tempH : '0' + tempH;
-            const min = tempMin.length === 2 ? tempMin : '0' + tempMin;
-            const sec = tempSec.length === 2 ? tempSec : '0' + tempSec;
-            const fullTime = year.concat(month, date) + "-" + hours.concat(min, sec, '000');
-            const id = data.userId.toString() + '-' + fullTime;
-
-            //format lại ngày, thời gian bắt đầu, kết thúc theo lịch đặt của user
-            const bookingTime = data.date;
-            const startTime = data.startTime;
-            const endTime = data.endTime;
-            const tempFullDate = bookingTime.split("-");
-            const fullDate = tempFullDate[0] + tempFullDate[1] + tempFullDate[2];
-            const tempStartTime = startTime.split(":");
-            const fullStartTime = tempStartTime[0] + tempStartTime[1] + "00000";
-            const tempEndTime = endTime.split(":");
-            const fullEndTime = tempEndTime[0] + tempEndTime[1] + "00000";
-
-            await db.ref('booking').child(data.id).update({
-                status: data.status,
-            });
-
-
-            if (data.status === "accepted") {
-                //thêm vào calendar
-                let isOcc: boolean = false;
-                const reqFrom = parseInt(fullStartTime);
-                const reqTo = parseInt(fullEndTime);
-                isOcc = (await calendarSchema.child(fullDate).get()).forEach(snap => {
-                    const value: Calendar = snap.val();
-                    const from = parseInt(value.from);
-                    const to = parseInt(value.to);
-                    if (!value.isDone) {
-                        if (value.date === fullDate && value.room === data.roomName) {
-                            if (reqFrom === from || reqTo === to) {
-                                return true;
-                            } else if (reqFrom > from && reqFrom < to) {
-                                return true;
-                            } else if (reqTo > from && reqTo < to) {
-                                return true;
-                            } else if (reqFrom < from && reqTo > to) {
-                                return true;
-                            }
-                        }
-                    }
-                });
-                if (!isOcc) {
-                    calendarSchema.child(fullDate).child(data.roomName.concat('-', fullStartTime, '-', fullEndTime)).set(
-                        {
-                            date: fullDate,
-                            from: fullStartTime,
-                            to: fullEndTime,
-                            isDone: false,
-                            reason: data.reason,
-                            room: data.roomName,
-                            userId: data.userId,
-                            userName: data.userId,//
-                        }
-                    );
-                    //send noti to user
-                    notification.sendMessage({
-                        message: 'Your request to book room ' + data.roomName + ' at ' + data.date + ' ' + data.startTime + '-' + data.endTime + " has been " + data.status,
-                        receiver: data.userId,
-                        sender: "admin",
-                        sendAt: fullTime,
-                        isRead: false,
-                        id: id,
-                    });
-                } else {
-                    response.status(400).send('Lich kin roi');
-                }
-            }
-
-            return response.status(200).json('ok');
-        } catch (err) {
-            response.status(500).send(err);
-        }
-    }
-
-
-
 
     cancelBookingRoom = async (request: express.Request, response: express.Response) => {
         try {
@@ -279,17 +183,17 @@ export class BookRoomController {
             } else {
                 await db.ref('booking').child(bookingId).update({
                     status: "deleted",
-                }).then( async ()=> {
+                }).then(async () => {
                     //nếu đã accepted phải hủy trong calendar
-                    if(status==="accepted"){
+                    if (status === "accepted") {
                         let calendarId;
-                        await db.ref('booking').child(bookingId).get().then(snap=>{
-                            let value=snap.val();
-                            calendarId=value.date+"/"+value.roomName+"-"+value.startTime+"-"+value.endTime;
+                        await db.ref('booking').child(bookingId).get().then(snap => {
+                            let value = snap.val();
+                            calendarId = value.date + "/" + value.roomName + "-" + value.startTime + "-" + value.endTime;
                         });
                         console.log(calendarId);
-                        
-                        if(calendarId){
+
+                        if (calendarId) {
                             calendarSchema.child(calendarId).update({ isDone: true });
                         }
                     }
@@ -386,7 +290,7 @@ export class BookRoomController {
                 if (error) {
                     response.status(500).send(error);
                 } else {
-                    
+
                     //gửi cho admin
                     notification.sendMessage({
                         message: ' changed a book room request to room ' + data.roomName + ' at ' + data.date + ' ' + data.startTime + '-' + data.endTime,
@@ -506,13 +410,4 @@ export class BookRoomController {
             response.status(500).send(err);
         }
     }
-
-    //check xem user có đặt trùng lịch với chính nó k
-    //0. nhận vào userId, date, start time, endtime
-    //1. kiểm tra trong booking có trạng thái accepted/pending
-    //2. nếu là giảng viên => kiểm tra thêm trong calendar
-
-
-
-
 }

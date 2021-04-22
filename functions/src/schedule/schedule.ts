@@ -50,7 +50,7 @@ export default class Schedule {
                 const halfHours = 60 * 30 * 1000;
                 if (Math.abs(startTime - currentTime.getTime()) === halfHours) {
                     const userInfo: User = (await userSchema.child(value[0]).get()).val();
-                    adminAuth.setCustomUserClaims(userInfo.uid, { room: value[3] });
+                    await adminAuth.setCustomUserClaims(userInfo.uid, {...(await adminAuth.getUser(userInfo.uid)).customClaims, room: value[3] });
                     notification.sendMessage({ id: `admin-${YMD.concat('-', fullTime)}`, isRead: false, message: `Còn 30p là đến phòng ${value[3]} với lý do ${value[4]}`, receiver: value[0], sender: "admin", sendAt: YMD.concat('-', fullTime) });
                 }
                 else if (Math.abs(endTime - currentTime.getTime()) === halfHours) {
@@ -59,19 +59,19 @@ export default class Schedule {
                 if (value[1] === fullTime) {
                     const userInfo: User = (await userSchema.child(value[0]).get()).val();
                     notification.sendMessage({ id: `admin-${YMD.concat('-', fullTime)}`, isRead: false, message: `Đến giờ phòng ${value[3]} với lý do ${value[4]}`, receiver: value[0], sender: "admin", sendAt: YMD.concat('-', fullTime) });
-                    adminAuth.setCustomUserClaims(userInfo.uid, { room: value[3] });
+                    await adminAuth.setCustomUserClaims(userInfo.uid, {...(await adminAuth.getUser(userInfo.uid)).customClaims, room: value[3] });
                 }
                 else if (value[2] === fullTime) {
                     const userInfo: User = (await userSchema.child(value[0]).get()).val();
                     notification.sendMessage({ id: `admin-${YMD.concat('-', fullTime)}`, isRead: false, message: `Hết Giờ phòng ${value[3]} với lý do ${value[4]}`, receiver: value[0], sender: "admin", sendAt: YMD.concat('-', fullTime) });
-                    await calendarSchema.child(YMD).child(value[1].concat('-', value[2], '-', value[3])).update({ isDone: true });
+                    await calendarSchema.child(YMD).child(value[3].concat('-', value[1], '-', value[2])).update({ isDone: true });
                     await roomSchema.child(value[3]).child('device').update({
                         conditioner: 0,
                         fan: 0,
                         light: 0,
                         powerPlug: 0
                     });
-                    adminAuth.setCustomUserClaims(userInfo.uid, { room: null });
+                    await adminAuth.setCustomUserClaims(userInfo.uid, {...(await adminAuth.getUser(userInfo.uid)).customClaims, room: null });
                 }
             });
         }

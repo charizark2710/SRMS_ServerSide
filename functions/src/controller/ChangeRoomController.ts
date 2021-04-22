@@ -1,12 +1,10 @@
 import * as express from 'express';
-import { db } from "../connector/configFireBase"
+import { db, adminAuth } from '../connector/configFireBase'
 import notification from './NotificationManagement'
 import auth from './Authenticate';
-import authorized from './Authorized';
-import { parse } from 'cookie';
-
+import { roomPermission } from './Authorized';
 import { Calendar, calendarSchema } from '../model/Calendar'
-
+import { userSchema } from '../model/UserModel'
 
 export class ChangeRoomController {
     public router = express.Router();
@@ -16,10 +14,9 @@ export class ChangeRoomController {
     }
 
     init() {
-        this.router.get(this.path + '/getCurrentRoom', auth, this.getCurrentRoom);
-        this.router.post(this.path + '/sendChangeRoomRequest', auth, this.sendChangeRoomRequest);
-        this.router.put(this.path + '/acceptChangeRoomRequest', auth, this.acceptChangeRoomRequest);
-
+        this.router.get(this.path + '/getCurrentRoom', auth, roomPermission(), this.getCurrentRoom);
+        this.router.post(this.path + '/sendChangeRoomRequest', auth, roomPermission(), this.sendChangeRoomRequest);
+        this.router.put(this.path + '/sendChangeRoomRequest', auth, roomPermission(), this.acceptChangeRoomRequest);
     }
 
     getCurrentRoom = async (request: express.Request, response: express.Response) => {
@@ -42,17 +39,12 @@ export class ChangeRoomController {
             const fullDate = year.concat(month, date);
             const tempFullTime = hours.concat(min, sec, '000');
             const fullTime = parseInt(tempFullTime);
-
-
             (await calendarSchema.child(fullDate).get()).forEach(snapshot => {
-                // if (snapshot.key === fullDate) {
                 if (snapshot) {
-                    let value = snapshot.val();
-                    // console.log(snap);
-                    //tìm room hiện tại của current user
+                    const value = snapshot.val();
                     if (value.userId === currentUser) {
-                        let from = parseInt(value.from)
-                        let to = parseInt(value.to)
+                        const from = parseInt(value.from)
+                        const to = parseInt(value.to)
                         if (fullTime >= from && fullTime <= to && !value.isDone) {
                             result = {
                                 id: snapshot.key,
@@ -63,13 +55,9 @@ export class ChangeRoomController {
                             }
                         }
                     }
-
                 }
-
             }
-                // }
             )
-
             return response.status(200).json(result);
         } catch (error) {
             response.status(500).send(error);
@@ -157,9 +145,6 @@ export class ChangeRoomController {
                 isRead: false,
                 id: id,
             });
-
-
-
             return response.status(200).json("ok");
         } catch (err) {
             response.status(500).send(err);
@@ -256,7 +241,7 @@ export class ChangeRoomController {
                             room: data.newRoom,
                             userId: userId,
                             userName: userName,
-                        }, async(error) => {
+                        }, async (error) => {
                             if (error) {
                                 response.status(400).send(error);
                             } else {
@@ -269,15 +254,19 @@ export class ChangeRoomController {
                                         snapValue.date === fullDate && snapValue.status === "changing" &&
                                         snapValue.roomName === data.room && snap.key.split("-")[0] === userId) {
                                         currentBookingId = snap.key;
-                                        return true;
+                                        return;
                                     }
                                 })
                                 if (currentBookingId) {
                                     await db.ref('booking').child(currentBookingId).update({
                                         roomName: data.newRoom,
-                                        status:"accepted"
-                                    })
+                                        status: "accepted"
+                                    });
                                 }
+
+                                const uid = (await userSchema.child(data.userId).get()).val()['uid'];
+                                adminAuth.setCustomUserClaims(uid, { ...(await adminAuth.getUser(uid)).customClaims, room: data.newRoom });
+
                                 //4.4 gửi noti cho user
                                 notification.sendMessage({
                                     message: 'You are accepted to change from ' + data.room + ' to ' + data.newRoom,
