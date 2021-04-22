@@ -9,6 +9,8 @@ import Schedule from './schedule/schedule'
 import * as dgram from 'dgram'
 import { mediaServer } from './media-server/media'
 import * as posenet from '@tensorflow-models/posenet'
+import { Reference } from 'firebase-admin/node_modules/@firebase/database-types/index'
+import { roomSchema } from './model/Room'
 
 const socket = dgram.createSocket({ type: 'udp4', reuseAddr: true }, (buffer, sender) => {
     const message = buffer.toString();
@@ -43,11 +45,63 @@ socket.on('listening', () => {
 
 const app = express();
 
+const roomRef: Reference[] = [];
+
+roomRef.push = function (arg) {
+    arg.on('child_changed', async snap => {
+
+        const date = new Date();
+        const reportSchema = db.ref('report');
+        const tempM = (date.getMonth() + 1).toString();
+        const tempD = date.getDate().toString();
+        const month = tempM.length === 2 ? tempM : '0' + tempM;
+        const day = tempD.length === 2 ? tempD : '0' + tempD;
+        const year = date.getFullYear();
+
+        const key = snap.key as string;
+        const value = snap.val();
+
+        const roSchema = roomSchema.child(arg.parent?.key as string).child('report');
+        const reSchema = reportSchema.child(year + month + day);
+
+        const currentRoomReport = (await roSchema.get()).val();
+        const currentReport = (await reSchema.get()).val();
+
+        const deviceObj: any = {};
+        const reportObj: any = {};
+        if (value === 0) {
+            reportObj[key] = (currentReport && currentReport[key]) ? currentReport[key] + (date.getTime() - currentRoomReport[key]) : 0 + (date.getTime() - currentRoomReport[key]);
+            reSchema.update(reportObj);
+            let totalEachDevice: any = { fan: 0, light: 0, powerPlug: 0, conditioner: 0 };
+            let total = 0;
+            (await reSchema.get()).forEach(snapReport => {
+                if (snapReport.key !== 'total')
+                    totalEachDevice[snapReport.key as string] += snapReport.val() as number;
+            });
+            await Object.values(totalEachDevice).forEach(val => {
+                total += val as number;
+            });
+            await reSchema.update(totalEachDevice);
+            await reSchema.update({ total: total });
+        }
+        else {
+            deviceObj[key] = date.getTime();
+            roSchema.update(deviceObj);
+        }
+    });
+    return Array.prototype.push.apply(this);
+}
+
 db.ref('.info/connected').on('value', async (snap) => {
     if (snap.val() === true) {
         console.log("connected");
-        const routes = new Route(app);
-        routes.routers();
+        roomSchema.get().then(roomSnap => {
+            roomSnap.forEach(childSnap => {
+                roomRef.push(childSnap.child('device').ref);
+            })
+        }).catch(e => {
+            console.log(e);
+        });
         const s: Schedule = new Schedule();
         notification.receiveMessage();
         let media: mediaServer;
@@ -102,6 +156,9 @@ app.use((req, res, next) => {
     // Pass to next layer of middleware
     next();
 });
+
+const routes = new Route(app);
+routes.routers();
 
 process.on('SIGHUP', function () {
     process.exit();

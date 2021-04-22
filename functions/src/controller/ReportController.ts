@@ -30,27 +30,27 @@ export class ReportController {
             let tDate = new Date(toDateData as string);
 
             for (let d = fDate; d <= tDate; d.setDate(d.getDate() + 1)) {
-                let date=d.getFullYear()+String(d.getMonth() + 1).padStart(2, '0')+String(d.getDate()).padStart(2, '0');
+                let date = d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
                 const snapshot = await db.ref('report').child(date).get();
                 if (snapshot) {
                     const dateKey = snapshot.key as string;
                     let dateFormat = date.toString().substring(0, 4) + "/" + date.toString().substring(4, 6) + "/" + date.toString().substring(6)
                     let value = snapshot.val();
-                    if (date === dateKey && value) {
-                        let data = {
-                            date: dateFormat,
-                            light: value.light? Math.floor(value.light / (1000 * 60 * 60)):0,
-                            fan: value.fan? Math.floor(value.fan / (1000 * 60 * 60)):0,
-                            powerPlug: value.powerPlug? Math.floor(value.powerPlug / (1000 * 60 * 60)):0,
-                            conditioner: value.conditioner? Math.floor(value.conditioner / (1000 * 60 * 60)):0,
+                    if (value) {
+                        if (date === dateKey && value) {
+                            let data = {
+                                date: dateFormat,
+                                light: value.light ? Math.floor(value.light / (1000 * 60 * 60)) : 0,
+                                fan: value.fan ? Math.floor(value.fan / (1000 * 60 * 60)) : 0,
+                                powerPlug: value.powerPlug ? Math.floor(value.powerPlug / (1000 * 60 * 60)) : 0,
+                                conditioner: value.conditioner ? Math.floor(value.conditioner / (1000 * 60 * 60)) : 0,
+                            }
+                            result.push(data);
                         }
-                        result.push(data);
+
                     }
                 }
             }
-
-            
-
             console.log(result);
 
             response.status(200).send(result);
@@ -59,6 +59,4 @@ export class ReportController {
             response.status(500).send(error);
         }
     }
-
-
 }
