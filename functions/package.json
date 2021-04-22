@@ -4,10 +4,10 @@
   "scripts": {
     "lint": "eslint \"src/**/*\"",
     "build": "tsc",
-    "serve": "npm run build && firebase serve --only functions",
+    "serve": "npm run build && firebase serve --only functions:srms",
     "shell": "npm run build && firebase functions:shell",
     "start": "npm run shell",
-    "deploy": "firebase deploy --only functions",
+    "deploy": "firebase deploy --only functions:srms",
     "logs": "firebase functions:log"
   },
   "engines": {

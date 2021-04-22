@@ -50,7 +50,9 @@ const roomRef: Reference[] = [];
 roomRef.push = function (arg) {
     arg.on('child_changed', async snap => {
 
-        const date = new Date();
+        let date = new Date();
+        date = new Date(Date.UTC(date.getFullYear(),date.getMonth(), date.getDate() , 
+        date.getHours() - 7, date.getMinutes(), date.getSeconds(), date.getMilliseconds()));;
         const reportSchema = db.ref('report');
         const tempM = (date.getMonth() + 1).toString();
         const tempD = date.getDate().toString();
@@ -104,25 +106,25 @@ db.ref('.info/connected').on('value', async (snap) => {
         });
         const s: Schedule = new Schedule();
         notification.receiveMessage();
-        let media: mediaServer;
-        while (true) {
-            try {
-                console.log("Waiting....");
-                const net = await posenet.load({
-                    architecture: "MobileNetV1",
-                    outputStride: 16,
-                    multiplier: 0.75,
-                    quantBytes: 2,
-                    inputResolution: { width: 640, height: 480 }
-                });
-                console.log("loaded");
-                media = new mediaServer(net);
-                media.dectectMedia();
-                break;
-            } catch (error) {
-                console.log(error);
-            }
-        }
+        // let media: mediaServer;
+        // while (true) {
+        //     try {
+        //         console.log("Waiting....");
+        //         const net = await posenet.load({
+        //             architecture: "MobileNetV1",
+        //             outputStride: 16,
+        //             multiplier: 0.75,
+        //             quantBytes: 2,
+        //             inputResolution: { width: 640, height: 480 }
+        //         });
+        //         console.log("loaded");
+        //         media = new mediaServer(net);
+        //         media.dectectMedia();
+        //         break;
+        //     } catch (error) {
+        //         console.log(error);
+        //     }
+        // }
     } else {
         console.log("not connected");
     }
@@ -175,4 +177,4 @@ process.on('exit', function (code) {
 
 app.listen(5000);
 socket.bind(5000);
-exports.app = functions.https.onRequest(app);
+exports.srms = functions.region('asia-southeast2').https.onRequest(app);

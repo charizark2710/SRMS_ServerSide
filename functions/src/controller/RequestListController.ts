@@ -17,7 +17,7 @@ export class RequestListController {
         // this.router.patch(this.path + "/banned/:id/restore", auth, authorized({ hasRole: ['admin', 'student', 'lecture'] }), this.restoreRoom);
         this.router.get(this.path, auth, this.getRequestList);
         this.router.get(this.path + "/:currentUser", auth, this.getHistoryRequestForUser);
-        this.router.delete(this.path + '/delete/:ids', auth, this.deleteRequestList);
+        this.router.delete(this.path + '/delete', auth, this.deleteRequestList);
     }
 
     getRequestList = async (request: express.Request, response: express.Response) => {

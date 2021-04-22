@@ -23,7 +23,9 @@ export default class Schedule {
     }
 
     timer(YMD: string) {
-        const currentTime = new Date();
+        let currentTime = new Date();
+        currentTime = new Date(Date.UTC(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate(),
+            currentTime.getHours() - 7, currentTime.getMinutes(), currentTime.getSeconds(), currentTime.getMilliseconds()));;
         currentTime.setMilliseconds(0);
         const tempM = (currentTime.getMonth() + 1).toString();
         const tempD = currentTime.getDate().toString();
@@ -50,7 +52,7 @@ export default class Schedule {
                 const halfHours = 60 * 30 * 1000;
                 if (Math.abs(startTime - currentTime.getTime()) === halfHours) {
                     const userInfo: User = (await userSchema.child(value[0]).get()).val();
-                    await adminAuth.setCustomUserClaims(userInfo.uid, {...(await adminAuth.getUser(userInfo.uid)).customClaims, room: value[3] });
+                    await adminAuth.setCustomUserClaims(userInfo.uid, { ...(await adminAuth.getUser(userInfo.uid)).customClaims, room: value[3] });
                     notification.sendMessage({ id: `admin-${YMD.concat('-', fullTime)}`, isRead: false, message: `Còn 30p là đến phòng ${value[3]} với lý do ${value[4]}`, receiver: value[0], sender: "admin", sendAt: YMD.concat('-', fullTime) });
                 }
                 else if (Math.abs(endTime - currentTime.getTime()) === halfHours) {
@@ -59,7 +61,7 @@ export default class Schedule {
                 if (value[1] === fullTime) {
                     const userInfo: User = (await userSchema.child(value[0]).get()).val();
                     notification.sendMessage({ id: `admin-${YMD.concat('-', fullTime)}`, isRead: false, message: `Đến giờ phòng ${value[3]} với lý do ${value[4]}`, receiver: value[0], sender: "admin", sendAt: YMD.concat('-', fullTime) });
-                    await adminAuth.setCustomUserClaims(userInfo.uid, {...(await adminAuth.getUser(userInfo.uid)).customClaims, room: value[3] });
+                    await adminAuth.setCustomUserClaims(userInfo.uid, { ...(await adminAuth.getUser(userInfo.uid)).customClaims, room: value[3] });
                 }
                 else if (value[2] === fullTime) {
                     const userInfo: User = (await userSchema.child(value[0]).get()).val();
@@ -71,7 +73,7 @@ export default class Schedule {
                         light: 0,
                         powerPlug: 0
                     });
-                    await adminAuth.setCustomUserClaims(userInfo.uid, {...(await adminAuth.getUser(userInfo.uid)).customClaims, room: null });
+                    await adminAuth.setCustomUserClaims(userInfo.uid, { ...(await adminAuth.getUser(userInfo.uid)).customClaims, room: null });
                 }
             });
         }

@@ -4,6 +4,7 @@ import notification from './NotificationManagement'
 import auth from './Authenticate';
 import { Calendar, calendarSchema } from '../model/Calendar';
 import { BookingRoom } from '../model/BookingRoom';
+import fullYear from '../common/formatDate'
 
 export class BookRoomController {
     public router = express.Router();
@@ -27,22 +28,7 @@ export class BookRoomController {
             const data = request.body;
 
             //tạo ID
-            const time = new Date();
-            const tempM = (time.getMonth() + 1).toString();
-            const tempD = time.getDate().toString();
-            const year = time.getFullYear().toString();
-            const month = tempM.length === 2 ? tempM : '0' + tempM;
-            const date = tempD.length === 2 ? tempD : '0' + tempD;
-            const tempH = time.getHours().toString();
-            const tempMin = time.getMinutes().toString();
-            const tempSec = time.getSeconds().toString();
-            const tempMs = time.getMilliseconds().toString();
-            const hours = tempH.length === 2 ? tempH : '0' + tempH;
-            const min = tempMin.length === 2 ? tempMin : '0' + tempMin;
-            const sec = tempSec.length === 2 ? tempSec : '0' + tempSec;
-            tempMs.length === 1 ? tempMs + '0' : tempMs;
-            const ms = tempMs.length === 3 ? tempMs : '0' + tempMs;
-            const fullTime = year.concat(month, date) + "-" + hours.concat(min, sec, ms);
+            const fullTime = fullYear();
             const id = data.userId.toString() + '-' + fullTime;//tránh trùng lịch bị overrride + dễ truy vấn khi xem chi tiết
 
             //format lại ngày, thời gian bắt đầu, kết thúc theo lịch đặt của user
@@ -135,20 +121,7 @@ export class BookRoomController {
             const message = request.query.message;
             const status = request.query.status;
             const userId = bookingId?.split('-')[0] || ' ';
-
-            const time = new Date();
-            const tempM = (time.getMonth() + 1).toString();
-            const tempD = time.getDate().toString();
-            const year = time.getFullYear().toString();
-            const month = tempM.length === 2 ? tempM : '0' + tempM;
-            const date = tempD.length === 2 ? tempD : '0' + tempD;
-            const tempH = time.getHours().toString();
-            const tempMin = time.getMinutes().toString();
-            const tempSec = time.getSeconds().toString();
-            const hours = tempH.length === 2 ? tempH : '0' + tempH;
-            const min = tempMin.length === 2 ? tempMin : '0' + tempMin;
-            const sec = tempSec.length === 2 ? tempSec : '0' + tempSec;
-            const fullTime = year.concat(month, date) + "-" + hours.concat(min, sec, '000');
+            const fullTime = fullYear();
             const id = userId.toString() + '-' + fullTime;
 
             //nếu đổi phòng
@@ -253,19 +226,7 @@ export class BookRoomController {
     updateBooking = async (request: express.Request, response: express.Response) => {
         try {
             const data = request.body;
-            const time = new Date();
-            const tempM = (time.getMonth() + 1).toString();
-            const tempD = time.getDate().toString();
-            const year = time.getFullYear().toString();
-            const month = tempM.length === 2 ? tempM : '0' + tempM;
-            const date = tempD.length === 2 ? tempD : '0' + tempD;
-            const tempH = time.getHours().toString();
-            const tempMin = time.getMinutes().toString();
-            const tempSec = time.getSeconds().toString();
-            const hours = tempH.length === 2 ? tempH : '0' + tempH;
-            const min = tempMin.length === 2 ? tempMin : '0' + tempMin;
-            const sec = tempSec.length === 2 ? tempSec : '0' + tempSec;
-            const fullTime = year.concat(month, date) + "-" + hours.concat(min, sec, '000');
+            const fullTime = fullYear();
 
             //format lại ngày, thời gian bắt đầu, kết thúc theo lịch đặt của user
             const bookingTime = data.date;

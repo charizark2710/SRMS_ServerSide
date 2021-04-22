@@ -4,6 +4,7 @@ import auth from './Authenticate';
 import { userSchema } from '../model/UserModel'
 import { db, adminAuth } from '../connector/configFireBase'
 import notification from './NotificationManagement'
+import fullYear from '../common/formatDate'
 
 export default class CalendarController {
     router = express.Router();
@@ -143,39 +144,22 @@ export default class CalendarController {
             const reqFrom = parseInt(data.from);
             const reqTo = parseInt(data.to);
             let isOcc: boolean = false;
-            const time = new Date();
-            const tempM = (time.getMonth() + 1).toString();
-            const tempD = time.getDate().toString();
-            const year = time.getFullYear().toString();
-            const month = tempM.length === 2 ? tempM : '0' + tempM;
-            const date = tempD.length === 2 ? tempD : '0' + tempD;
-            const tempH = time.getHours().toString();
-            const tempMin = time.getMinutes().toString();
-            const tempSec = time.getSeconds().toString();
-            const tempMs = time.getMilliseconds().toString();
-            const hours = tempH.length === 2 ? tempH : '0' + tempH;
-            const min = tempMin.length === 2 ? tempMin : '0' + tempMin;
-            const sec = tempSec.length === 2 ? tempSec : '0' + tempSec;
-            tempMs.length === 1 ? tempMs + '0' : tempMs;
-            const ms = tempMs.length === 3 ? tempMs : '0' + tempMs;
-            const fullTime = year.concat(month, date) + "-" + hours.concat(min, sec, ms);
+            let time = new Date();
+            const fullTime = fullYear();
             const id = data.userId.toString() + '-' + fullTime;
 
             if (!(await userSchema.child(data.userId).get()).exists()) {
                 return response.status(500).send('Sai uid');
             }
-
-            const bookValue = (await db.ref('booking').child(data.id).get()).val();
-
             if (data.status === "accepted") {
                 // const test = new Date(parseInt(data.date.slice(0, 4)), parseInt(data.date.slice(4, 6)) - 1, parseInt(data.date.slice(6, 8)));
-                isOcc = (await calendarSchema.child(bookValue.date).get()).forEach(snap => {
+                isOcc = (await calendarSchema.child(data.date).get()).forEach(snap => {
                     const value: Calendar = snap.val();
                     const from = parseInt(value.from);
                     const to = parseInt(value.to);
                     if (!value.isDone) {
                         if (data.userId === value.userId) return true;
-                        if (value.date === bookValue.date && value.room === bookValue.roomName) {
+                        if (value.date === data.date && value.room === data.room) {
                             if (reqFrom === from || reqTo === to) {
                                 return true;
                             } else if (reqFrom > from && reqFrom < to) {
@@ -190,12 +174,12 @@ export default class CalendarController {
                 });
 
                 if (!isOcc) {
-                    await calendarSchema.child(bookValue.date).child(data.room.concat('-', bookValue.startTime, '-', bookValue.endTime)).set({
-                        date: bookValue.date,
-                        from: bookValue.startTime,
+                    await calendarSchema.child(data.date).child(data.room.concat('-', data.from, '-', data.to)).set({
+                        date: data.date,
+                        from: data.from,
                         isDone: false,
-                        reason: bookValue.reason,
-                        to: bookValue.endTime,
+                        reason: data.reason,
+                        to: data.to,
                         userId: data.userId,
                         room: data.room
                     });
@@ -260,7 +244,7 @@ export default class CalendarController {
                 calendarSchema.child(data.date).child(data.room.concat('-', data.from, '-', data.to)).set(data);
                 await calendarSchema.child(date as string).child(id).update({ isDone: true });
                 const uid = (await userSchema.child(data.userId).get()).val()['uid'];
-                adminAuth.setCustomUserClaims(uid, { room: data.room });
+                adminAuth.setCustomUserClaims(uid, { ...(await adminAuth.getUser(uid)).customClaims, room: data.room });
                 response.status(200).send('ok');
             } else {
                 response.status(400).send('Lich kin roi');

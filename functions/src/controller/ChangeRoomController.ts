@@ -5,6 +5,7 @@ import auth from './Authenticate';
 import { roomPermission } from './Authorized';
 import { Calendar, calendarSchema } from '../model/Calendar'
 import { userSchema } from '../model/UserModel'
+import fullYear from '../common/formatDate'
 
 export class ChangeRoomController {
     public router = express.Router();
@@ -22,42 +23,29 @@ export class ChangeRoomController {
     getCurrentRoom = async (request: express.Request, response: express.Response) => {
         try {
             let result: any = {};
-            const currentUser = response.locals.employeeId;
 
-            const time = new Date();
-            const tempM = (time.getMonth() + 1).toString();
-            const tempD = time.getDate().toString();
-            const year = time.getFullYear().toString();
-            const month = tempM.length === 2 ? tempM : '0' + tempM;
-            const date = tempD.length === 2 ? tempD : '0' + tempD;
-            const tempH = time.getHours().toString();
-            const tempMin = time.getMinutes().toString();
-            const tempSec = time.getSeconds().toString();
-            const hours = tempH.length === 2 ? tempH : '0' + tempH;
-            const min = tempMin.length === 2 ? tempMin : '0' + tempMin;
-            const sec = tempSec.length === 2 ? tempSec : '0' + tempSec;
-            const fullDate = year.concat(month, date);
-            const tempFullTime = hours.concat(min, sec, '000');
-            const fullTime = parseInt(tempFullTime);
-            (await calendarSchema.child(fullDate).get()).forEach(snapshot => {
-                if (snapshot) {
-                    const value = snapshot.val();
-                    if (value.userId === currentUser) {
-                        const from = parseInt(value.from)
-                        const to = parseInt(value.to)
-                        if (fullTime >= from && fullTime <= to && !value.isDone) {
-                            result = {
-                                id: snapshot.key,
-                                room: value.room,
-                                from: value.from,
-                                date: value.date,
-                                to: value.to,
-                            }
+            const tempFullTime = fullYear().split('-');
+            const fullTime = parseInt(tempFullTime[1]);
+            const room = response.locals.room;
+            const snap = await calendarSchema.child(tempFullTime[0]).orderByKey().startAt(room + " ").endAt(room + "~").get();
+            for (let value of Object.values(snap.val())) {
+                if ((value as any).userId === response.locals.employeeId) {
+                    const from = parseInt((value as any).from);
+                    const to = parseInt((value as any).to);
+                    if (fullTime >= from && fullTime <= to && !(value as any).isDone) {
+                        console.log('ok rồi');
+                        result = {
+                            id: snap.key,
+                            room: (value as any).room,
+                            from: (value as any).from,
+                            date: (value as any).date,
+                            to: (value as any).to,
                         }
+                        break;
                     }
                 }
             }
-            )
+            console.log('result: ' + JSON.stringify(result));
             return response.status(200).json(result);
         } catch (error) {
             response.status(500).send(error);
@@ -75,23 +63,7 @@ export class ChangeRoomController {
         try {
             const data = request.body; //id trong calendar, userId, room, date, reason
 
-            //tạo ID
-            const time = new Date();
-            const tempM = (time.getMonth() + 1).toString();
-            const tempD = time.getDate().toString();
-            const year = time.getFullYear().toString();
-            const month = tempM.length === 2 ? tempM : '0' + tempM;
-            const date = tempD.length === 2 ? tempD : '0' + tempD;
-            const tempH = time.getHours().toString();
-            const tempMin = time.getMinutes().toString();
-            const tempSec = time.getSeconds().toString();
-            const tempMs = time.getMilliseconds().toString();
-            const hours = tempH.length === 2 ? tempH : '0' + tempH;
-            const min = tempMin.length === 2 ? tempMin : '0' + tempMin;
-            const sec = tempSec.length === 2 ? tempSec : '0' + tempSec;
-            tempMs.length === 1 ? tempMs + '0' : tempMs;
-            const ms = tempMs.length === 3 ? tempMs : '0' + tempMs;
-            const fullTime = year.concat(month, date) + "-" + hours.concat(min, sec, ms);
+            const fullTime = fullYear();
             const id = data.userId.toString() + '-' + fullTime;//tránh trùng lịch bị overrride + dễ truy vấn khi xem chi tiết
 
             const changeDate = data.date;
@@ -102,10 +74,10 @@ export class ChangeRoomController {
                 if (snapshot.exists()) {
                     await calendarSchema.child(currentDate).child(data.calendarId).update({ reason: data.reasonToChange });
                     let currentBookingId;
-                    let snapShotValue = snapshot.val();
+                    const snapShotValue = snapshot.val();
 
                     (await db.ref('booking').get()).forEach((snap: any) => {
-                        let snapValue = snap.val();
+                        const snapValue = snap.val();
                         if (snapValue.startTime === snapShotValue.from && snapValue.endTime === snapShotValue.to &&
                             snapValue.date === snapShotValue.date && snapValue.status === "accepted" &&
                             snapValue.roomName === snapShotValue.room && snap.key.split("-")[0] === snapShotValue.userId) {
@@ -167,22 +139,7 @@ export class ChangeRoomController {
 
             const data = request.body; //id trong calendar, userId, newRoom
             //tạo ID
-            const time = new Date();
-            const tempM = (time.getMonth() + 1).toString();
-            const tempD = time.getDate().toString();
-            const year = time.getFullYear().toString();
-            const month = tempM.length === 2 ? tempM : '0' + tempM;
-            const date = tempD.length === 2 ? tempD : '0' + tempD;
-            const tempH = time.getHours().toString();
-            const tempMin = time.getMinutes().toString();
-            const tempSec = time.getSeconds().toString();
-            const tempMs = time.getMilliseconds().toString();
-            const hours = tempH.length === 2 ? tempH : '0' + tempH;
-            const min = tempMin.length === 2 ? tempMin : '0' + tempMin;
-            const sec = tempSec.length === 2 ? tempSec : '0' + tempSec;
-            tempMs.length === 1 ? tempMs + '0' : tempMs;
-            const ms = tempMs.length === 3 ? tempMs : '0' + tempMs;
-            const fullTime = year.concat(month, date) + "-" + hours.concat(min, sec, ms);
+            const fullTime = fullYear();
             const id = data.userId.toString() + '-' + fullTime;
 
             //format lại ngày, thời gian bắt đầu, kết thúc theo lịch đặt của user
@@ -249,7 +206,7 @@ export class ChangeRoomController {
                                 let currentBookingId;
 
                                 (await db.ref('booking').get()).forEach((snap: any) => {
-                                    let snapValue = snap.val();
+                                    const snapValue = snap.val();
                                     if (snapValue.startTime === reqFrom && snapValue.endTime === reqTo &&
                                         snapValue.date === fullDate && snapValue.status === "changing" &&
                                         snapValue.roomName === data.room && snap.key.split("-")[0] === userId) {

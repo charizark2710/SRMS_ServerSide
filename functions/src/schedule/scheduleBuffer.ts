@@ -7,7 +7,9 @@ const fullDay: any = {};
 async function defineDay() {
     Object.defineProperty(fullDay, 'currentDay', {
         get: function () {
-            const fullDate = new Date();
+            let fullDate = new Date();
+            fullDate = new Date(Date.UTC(fullDate.getFullYear(), fullDate.getMonth(), fullDate.getDate(),
+                fullDate.getHours() - 7, fullDate.getMinutes(), fullDate.getSeconds(), fullDate.getMilliseconds()));;
             const tempM = (fullDate.getMonth() + 1).toString();
             const tempD = fullDate.getDate().toString();
             return {
