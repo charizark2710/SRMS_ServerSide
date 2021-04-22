@@ -8,5 +8,4 @@ export default interface message {
     typeRequest?:string,
     status?:string,
     url?: string,
-    isValid?:boolean,
 }

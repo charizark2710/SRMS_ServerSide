@@ -14,6 +14,7 @@ export default class CalendarController {
     init() {
         this.router.get(this.url, auth, this.viewCalendar);
         this.router.post(this.url + '/add', auth, this.addSchedule);
+        this.router.post(this.url, auth, this.importCalendar);
         this.router.get(this.url + '/:id', auth, this.getSchedules);
         this.router.put(this.url + '/:id', auth, this.editSchedule);
     }
@@ -225,4 +226,58 @@ export default class CalendarController {
             response.status(500).send(error);
         }
     }
+
+    importCalendar = async (request: express.Request, response: express.Response) => {
+        try {
+            const calendars: Calendar[] = request.body;
+
+            for (let i = 0; i < calendars.length; i++) {
+                let data:Calendar = {
+                    date:calendars[i].date.toString(),
+                    from:calendars[i].from.toString(),
+                    to:calendars[i].to.toString(),
+                    isDone:false,
+                    reason:calendars[i].reason,
+                    room:calendars[i].room.toString(),
+                    userId:calendars[i].userId,
+                    userName:calendars[i].userName,
+                }
+
+                const reqFrom = parseInt(data.from);
+                const reqTo = parseInt(data.to);
+                let isOcc: boolean = false;
+                // if (!(await userSchema.child(data.userId).get()).exists()) {
+                //     return response.status(500).send('Sai uid');
+                // }
+                // const test = new Date(parseInt(data.date.slice(0, 4)), parseInt(data.date.slice(4, 6)) - 1, parseInt(data.date.slice(6, 8)));
+                isOcc = (await calendarSchema.child(data.date).get()).forEach(snap => {
+                    const value: Calendar = snap.val();
+                    const from = parseInt(value.from);
+                    const to = parseInt(value.to);
+                    if (!value.isDone) {
+                        if (value.date === data.date && value.room === data.room) {
+                            if (reqFrom === from || reqTo === to) {
+                                return true;
+                            } else if (reqFrom > from && reqFrom < to) {
+                                return true;
+                            } else if (reqTo > from && reqTo < to) {
+                                return true;
+                            } else if (reqFrom < from && reqTo > to) {
+                                return true;
+                            }
+                        }
+                    }
+                });
+                if (!isOcc) {
+                    calendarSchema.child(data.date).child(data.room.concat('-', data.from, '-', data.to)).set(data);
+                } 
+            }
+            return response.status(200).json(calendars.length);
+
+        } catch (error) {
+            response.status(500).json(error);
+        }
+    }
+
+
 }

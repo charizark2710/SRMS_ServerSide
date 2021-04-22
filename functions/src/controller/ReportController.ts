@@ -26,31 +26,28 @@ export class ReportController {
             let fromDateData = request.query.fromDate;
             let toDateData = request.query.toDate;
 
-            const tempFromDate = (fromDateData as string).split("-");
-            const fromDate = tempFromDate[0] + tempFromDate[1] + tempFromDate[2];
-            const tempToDate = (toDateData as string).split("-");
-            const toDate = tempToDate[0] + tempToDate[1] + tempToDate[2];
+            let fDate = new Date(fromDateData as string);
+            let tDate = new Date(toDateData as string);
 
-            const reqFromDate = parseInt(fromDate)
-            const reqToDate = parseInt(toDate)
-
-            for (let index = reqFromDate; index <= reqToDate; index++) {
-                const snapshot = await db.ref('report').child(index.toString()).get();
+            for (let d = fDate; d <= tDate; d.setDate(d.getDate() + 1)) {
+                let date = d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+                const snapshot = await db.ref('report').child(date).get();
                 if (snapshot) {
-                    const date = parseInt(snapshot.key as string);
+                    const dateKey = snapshot.key as string;
                     let dateFormat = date.toString().substring(0, 4) + "/" + date.toString().substring(4, 6) + "/" + date.toString().substring(6)
                     let value = snapshot.val();
                     if (value) {
-                        if (index === date) {
+                        if (date === dateKey && value) {
                             let data = {
                                 date: dateFormat,
-                                light: value.light ? parseInt(value.light) : 0,
-                                fan: value.fan ? parseInt(value.fan) : 0,
-                                powerPlug: value.powerPlug ? parseInt(value.powerPlug) : 0,
-                                conditioner: value.conditioner ? parseInt(value.conditioner) : 0,
+                                light: value.light ? Math.floor(value.light / (1000 * 60 * 60)) : 0,
+                                fan: value.fan ? Math.floor(value.fan / (1000 * 60 * 60)) : 0,
+                                powerPlug: value.powerPlug ? Math.floor(value.powerPlug / (1000 * 60 * 60)) : 0,
+                                conditioner: value.conditioner ? Math.floor(value.conditioner / (1000 * 60 * 60)) : 0,
                             }
                             result.push(data);
                         }
+
                     }
                 }
             }
@@ -62,6 +59,4 @@ export class ReportController {
             response.status(500).send(error);
         }
     }
-
-
 }

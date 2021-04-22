@@ -82,7 +82,6 @@ export class BookRoomController {
                             isRead: false,
                             id: id,
                             url: "/bookRoomRequest/" + id,
-                            isValid: true,
                         });
                         //gửi cho chính user đặt phòng
                         notification.sendMessage({
@@ -262,7 +261,6 @@ export class BookRoomController {
                         isRead: false,
                         id: id,
                         url: "/bookRoomRequest/" + bookingId,
-                        isValid: false,
                     });
                     //gửi cho chính user đặt phòng
                     notification.sendMessage({
@@ -281,14 +279,16 @@ export class BookRoomController {
             } else {
                 await db.ref('booking').child(bookingId).update({
                     status: "deleted",
-                }).then(function () {
+                }).then( async ()=> {
                     //nếu đã accepted phải hủy trong calendar
                     if(status==="accepted"){
                         let calendarId;
-                        db.ref('booking').child(bookingId).get().then(snap=>{
+                        await db.ref('booking').child(bookingId).get().then(snap=>{
                             let value=snap.val();
                             calendarId=value.date+"/"+value.roomName+"-"+value.startTime+"-"+value.endTime;
                         });
+                        console.log(calendarId);
+                        
                         if(calendarId){
                             calendarSchema.child(calendarId).update({ isDone: true });
                         }
@@ -303,7 +303,6 @@ export class BookRoomController {
                         isRead: false,
                         id: id,
                         url: "/bookRoomRequest/" + bookingId,
-                        isValid: false,
                     });
                     //gửi cho chính user đặt phòng
                     notification.sendMessage({
@@ -387,8 +386,7 @@ export class BookRoomController {
                 if (error) {
                     response.status(500).send(error);
                 } else {
-                    //noti trước khi cập nhật trở thành invalid
-                    notification.updateIsValid(data.actionNotiId);
+                    
                     //gửi cho admin
                     notification.sendMessage({
                         message: ' changed a book room request to room ' + data.roomName + ' at ' + data.date + ' ' + data.startTime + '-' + data.endTime,
@@ -398,7 +396,6 @@ export class BookRoomController {
                         isRead: false,
                         id: id,
                         url: "/bookRoomRequest/" + data.id,
-                        isValid: true,
                     });
                     //gửi cho chính user đặt phòng
                     notification.sendMessage({
