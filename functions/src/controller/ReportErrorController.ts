@@ -17,21 +17,21 @@ export class ReportErrorController {
         // this.router.post(this.path, this.createBookingRoom);
         this.router.patch(this.path + "/delete/:id", auth, this.deleteReportError);
         this.router.patch(this.path + "/acceptOrRejectReportError", auth, authorized({ hasRole: ['admin'] }), this.acceptOrRejectReportError);
-        this.router.put(this.path + "/update", this.updateReportError);
+        this.router.put(this.path + "/update", auth, this.updateReportError);
         this.router.get(this.path + '/:id', auth, this.viewDetailReportError);
-        this.router.get(this.path + '/edit/:id', this.getReportErrorById);
+        this.router.get(this.path + '/edit/:id', auth, this.getReportErrorById);
     }
 
     //user gửi requuest => admin + user nhận thông báo 
     sendRepportError = async (request: express.Request, response: express.Response) => {
         try {
-            var data = request.body;//roomName, deviceName, des
+            const data = request.body;//roomName, deviceName, des
 
             //tạo ID
             const fullTime = fullYear();
             const id = data.userId.toString() + '-' + fullTime;//tránh trùng lịch bị overrride + dễ truy vấn khi xem chi tiết
 
-            var deviceNames = "";
+            let deviceNames = "";
             if (data.deviceNames) {
                 data.deviceNames.forEach((d: string) => {
                     deviceNames += " " + d + " "
@@ -69,6 +69,7 @@ export class ReportErrorController {
                         sendAt: fullTime,
                         isRead: false,
                         id: id,
+                        url: "/reportErrorRequest/" + id,
                     });
                 }
             });
@@ -80,8 +81,8 @@ export class ReportErrorController {
 
     viewDetailReportError = async (request: express.Request, response: express.Response) => {
         try {
-            var result = {};
-            var id = request.params.id;
+            let result = {};
+            const id = request.params.id;
             db.ref('notification').child('admin').child(id.toString()).update({
                 isRead: true
             });
@@ -147,7 +148,7 @@ export class ReportErrorController {
     //update trong booking / user/admin
     acceptOrRejectReportError = async (request: express.Request, response: express.Response) => {
         try {
-            var data = request.body;
+            const data = request.body;
             const fullTime = fullYear();
             const id = data.userId.toString() + '-' + fullTime;
 
@@ -229,6 +230,7 @@ export class ReportErrorController {
                         sendAt: fullTime,
                         isRead: false,
                         id: id,
+                        url: "/reportErrorRequest/" + data.id,
                     });
                 }
             });

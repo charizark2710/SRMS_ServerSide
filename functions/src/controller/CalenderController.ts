@@ -334,6 +334,4 @@ export default class CalendarController {
             response.status(500).json(error);
         }
     }
-
-
 }

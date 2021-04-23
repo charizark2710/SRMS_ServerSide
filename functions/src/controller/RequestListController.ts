@@ -1,10 +1,6 @@
-import { userSchema } from '../model/UserModel'
 import * as express from 'express';
-import { db, adminAuth } from "../connector/configFireBase"
+import { db } from "../connector/configFireBase"
 import auth from './Authenticate';
-import authorized from './Authorized';
-import notification from './NotificationManagement'
-import { roomSchema, Room } from '../model/Room'
 
 export class RequestListController {
     public router = express.Router();
@@ -22,7 +18,7 @@ export class RequestListController {
 
     getRequestList = async (request: express.Request, response: express.Response) => {
         try {
-            var result: any[] = [];
+            const result: any[] = [];
             (await db.ref('notification').child('admin').get()).forEach(snapshot => {
                 const value = snapshot.val();
                 if(value.url!==""){

@@ -51,8 +51,6 @@ export default class Schedule {
                 const endTime = timeTemp.setHours(parseInt(value[2].substring(0, 2)), parseInt(value[2].substring(2, 4)), parseInt(value[2].substring(4, 6)), parseInt(value[2].substring(6)));
                 const halfHours = 60 * 30 * 1000;
                 if (Math.abs(startTime - currentTime.getTime()) === halfHours) {
-                    const userInfo: User = (await userSchema.child(value[0]).get()).val();
-                    await adminAuth.setCustomUserClaims(userInfo.uid, { ...(await adminAuth.getUser(userInfo.uid)).customClaims, room: value[3] });
                     notification.sendMessage({ id: `admin-${YMD.concat('-', fullTime)}`, isRead: false, message: `Còn 30p là đến phòng ${value[3]} với lý do ${value[4]}`, receiver: value[0], sender: "admin", sendAt: YMD.concat('-', fullTime) });
                 }
                 else if (Math.abs(endTime - currentTime.getTime()) === halfHours) {

@@ -251,7 +251,4 @@ export class ChangeRoomController {
             response.status(500).send(err);
         }
     }
-
-
-
 }

@@ -17,7 +17,6 @@ class notificationManagement {
     sendMessage = (onload: message) => {
         db.ref('notification').child(onload.receiver).child(onload.id.toString()).set(onload);
     }
-
     
     updateIsRead=(id:string)=>{
         db.ref('notification').child('admin').child(id.toString()).update({

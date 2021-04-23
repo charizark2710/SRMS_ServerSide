@@ -73,6 +73,7 @@ export class BookRoomController {
                             sendAt: fullTime,
                             isRead: false,
                             id: id,
+                            url: "/bookRoomRequest/" + id,
                         });
                     }
                 });

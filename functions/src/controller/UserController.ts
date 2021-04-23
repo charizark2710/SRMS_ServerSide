@@ -19,14 +19,14 @@ export class UserController {
 
     banUser = (request: express.Request, response: express.Response) => {
         try {
-            var data = request.body;//list banning users
+            const data = request.body;//list banning users
             const result: any[] = []
 
             if (data) {
                 data.forEach(async (user: any) => {
                     const userObj: User = JSON.parse(user);
-                    var userId = userObj.email.split('@')[0] || ' ';
-                    var bannedAt = (new Date()).toString();
+                    const userId = userObj.email.split('@')[0] || ' ';
+                    const bannedAt = (new Date()).toString();
 
                     await userSchema.child(userId).update({
                         banned: true,
@@ -56,8 +56,8 @@ export class UserController {
     }
     unbanUser = async (request: express.Request, response: express.Response) => {
         try {
-            var data = request.query.id as string;
-            var userId = "";
+            const data = request.query.id as string;
+            let userId = "";
             if (data) {
                 userId = data.split('@')[0];
             }
@@ -74,7 +74,7 @@ export class UserController {
 
     getBannedUsers = async (request: express.Request, response: express.Response) => {
         try {
-            var result: any[] = [];
+            const result: any[] = [];
             await userSchema.orderByChild('banned').equalTo(true).on('child_added', snapshot => {
                 const value = snapshot.val();
                 result.push(value);
@@ -88,7 +88,7 @@ export class UserController {
 
     getUnbannedUsers = async (request: express.Request, response: express.Response) => {
         try {
-            var result: any[] = [];
+            const result: any[] = [];
             await userSchema.orderByChild('banned').equalTo(false).on('child_added', snapshot => {
                 const value = snapshot.val();
                 result.push(value.email);
