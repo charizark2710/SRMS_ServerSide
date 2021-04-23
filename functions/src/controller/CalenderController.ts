@@ -4,7 +4,7 @@ import auth from './Authenticate';
 import { userSchema } from '../model/UserModel'
 import { db, adminAuth } from '../connector/configFireBase'
 import notification from './NotificationManagement'
-import fullYear from '../common/formatDate'
+import getUTC from '../common/formatDate'
 
 export default class CalendarController {
     router = express.Router();
@@ -144,8 +144,7 @@ export default class CalendarController {
             const reqFrom = parseInt(data.from);
             const reqTo = parseInt(data.to);
             let isOcc: boolean = false;
-            let time = new Date();
-            const fullTime = fullYear();
+            const fullTime = getUTC(new Date());
             const id = data.userId.toString() + '-' + fullTime;
 
             if (!(await userSchema.child(data.userId).get()).exists()) {

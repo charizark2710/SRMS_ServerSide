@@ -4,7 +4,7 @@ import notification from './NotificationManagement'
 import auth from './Authenticate';
 import { Calendar, calendarSchema } from '../model/Calendar';
 import { BookingRoom } from '../model/BookingRoom';
-import fullYear from '../common/formatDate'
+import getUTC from '../common/formatDate'
 
 export class BookRoomController {
     public router = express.Router();
@@ -28,7 +28,7 @@ export class BookRoomController {
             const data = request.body;
 
             //tạo ID
-            const fullTime = fullYear();
+            const fullTime = getUTC(new Date());
             const id = data.userId.toString() + '-' + fullTime;//tránh trùng lịch bị overrride + dễ truy vấn khi xem chi tiết
 
             //format lại ngày, thời gian bắt đầu, kết thúc theo lịch đặt của user
@@ -122,7 +122,7 @@ export class BookRoomController {
             const message = request.query.message;
             const status = request.query.status;
             const userId = bookingId?.split('-')[0] || ' ';
-            const fullTime = fullYear();
+            const fullTime = getUTC(new Date());
             const id = userId.toString() + '-' + fullTime;
 
             //nếu đổi phòng
@@ -227,7 +227,7 @@ export class BookRoomController {
     updateBooking = async (request: express.Request, response: express.Response) => {
         try {
             const data = request.body;
-            const fullTime = fullYear();
+            const fullTime = getUTC(new Date());
 
             //format lại ngày, thời gian bắt đầu, kết thúc theo lịch đặt của user
             const bookingTime = data.date;

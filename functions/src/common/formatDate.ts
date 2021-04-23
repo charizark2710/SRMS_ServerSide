@@ -1,7 +1,13 @@
-export default function fullYear() {
-    const now = new Date();
+export function getDate(now: Date) {
     const time = new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(),
-        now.getUTCHours()+ 7, now.getUTCMinutes(), now.getUTCSeconds(), now.getUTCMilliseconds());;
+        now.getUTCHours() + 7, now.getUTCMinutes(), now.getUTCSeconds(), now.getUTCMilliseconds());;
+
+    return time;
+}
+
+export default function getUTC(now: Date) {
+    const time = new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(),
+        now.getUTCHours() + 7, now.getUTCMinutes(), now.getUTCSeconds(), now.getUTCMilliseconds());;
     const tempM = (time.getMonth() + 1).toString();
     const tempD = time.getDate().toString();
     const year = time.getFullYear().toString();

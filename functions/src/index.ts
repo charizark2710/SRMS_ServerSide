@@ -11,6 +11,7 @@ import { mediaServer } from './media-server/media'
 import * as posenet from '@tensorflow-models/posenet'
 import { Reference } from 'firebase-admin/node_modules/@firebase/database-types/index'
 import { roomSchema } from './model/Room'
+import getUTC, {getDate} from './common/formatDate'
 
 const socket = dgram.createSocket({ type: 'udp4', reuseAddr: true }, (buffer, sender) => {
     const message = buffer.toString();
@@ -49,22 +50,16 @@ const roomRef: Reference[] = [];
 
 roomRef.push = function (arg) {
     arg.on('child_changed', async snap => {
+        const date = getDate(new Date());
+        const fullDate = getUTC(date);
 
-        let date = new Date();
-        date = new Date(Date.UTC(date.getFullYear(),date.getMonth(), date.getDate() , 
-        date.getHours() - 7, date.getMinutes(), date.getSeconds(), date.getMilliseconds()));;
         const reportSchema = db.ref('report');
-        const tempM = (date.getMonth() + 1).toString();
-        const tempD = date.getDate().toString();
-        const month = tempM.length === 2 ? tempM : '0' + tempM;
-        const day = tempD.length === 2 ? tempD : '0' + tempD;
-        const year = date.getFullYear();
 
         const key = snap.key as string;
         const value = snap.val();
 
         const roSchema = roomSchema.child(arg.parent?.key as string).child('report');
-        const reSchema = reportSchema.child(year + month + day);
+        const reSchema = reportSchema.child(fullDate.split('-')[0]);
 
         const currentRoomReport = (await roSchema.get()).val();
         const currentReport = (await reSchema.get()).val();

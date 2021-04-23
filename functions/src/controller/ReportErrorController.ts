@@ -3,7 +3,7 @@ import { db, adminAuth } from "../connector/configFireBase"
 import auth from './Authenticate';
 import authorized from './Authorized';
 import notification from './NotificationManagement'
-import fullYear from '../common/formatDate'
+import getUTC from '../common/formatDate'
 
 export class ReportErrorController {
     public router = express.Router();
@@ -28,7 +28,7 @@ export class ReportErrorController {
             const data = request.body;//roomName, deviceName, des
 
             //tạo ID
-            const fullTime = fullYear();
+            const fullTime = getUTC(new Date());
             const id = data.userId.toString() + '-' + fullTime;//tránh trùng lịch bị overrride + dễ truy vấn khi xem chi tiết
 
             let deviceNames = "";
@@ -108,7 +108,7 @@ export class ReportErrorController {
             const message = request.query.message;
             const actionNotiId = request.query.actionNotiId;
             const userId = reportErrId?.split('-')[0] || ' ';
-            const fullTime = fullYear();
+            const fullTime = getUTC(new Date());
             const id = userId.toString() + '-' + fullTime;
 
             //xóa trong booking, xóa hết noti
@@ -149,7 +149,7 @@ export class ReportErrorController {
     acceptOrRejectReportError = async (request: express.Request, response: express.Response) => {
         try {
             const data = request.body;
-            const fullTime = fullYear();
+            const fullTime = getUTC(new Date());
             const id = data.userId.toString() + '-' + fullTime;
 
 
@@ -199,7 +199,7 @@ export class ReportErrorController {
     updateReportError = async (request: express.Request, response: express.Response) => {
         try {
             const data = request.body;
-            const fullTime = fullYear();
+            const fullTime = getUTC(new Date());
             const id = data.id?.split('-')[0].toString() + '-' + fullTime;
 
             await db.ref('complaint').child(data.id).update({

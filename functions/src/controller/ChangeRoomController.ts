@@ -5,7 +5,7 @@ import auth from './Authenticate';
 import { roomPermission } from './Authorized';
 import { Calendar, calendarSchema } from '../model/Calendar'
 import { userSchema } from '../model/UserModel'
-import fullYear from '../common/formatDate'
+import getUTC from '../common/formatDate'
 
 export class ChangeRoomController {
     public router = express.Router();
@@ -24,7 +24,7 @@ export class ChangeRoomController {
         try {
             let result: any = {};
 
-            const tempFullTime = fullYear().split('-');
+            const tempFullTime = getUTC(new Date()).split('-');
             const fullTime = parseInt(tempFullTime[1]);
             const room = response.locals.room;
             const snap = await calendarSchema.child(tempFullTime[0]).orderByKey().startAt(room + " ").endAt(room + "~").get();
@@ -63,7 +63,7 @@ export class ChangeRoomController {
         try {
             const data = request.body; //id trong calendar, userId, room, date, reason
 
-            const fullTime = fullYear();
+            const fullTime = getUTC(new Date());
             const id = data.userId.toString() + '-' + fullTime;//tránh trùng lịch bị overrride + dễ truy vấn khi xem chi tiết
 
             const changeDate = data.date;
@@ -139,7 +139,7 @@ export class ChangeRoomController {
 
             const data = request.body; //id trong calendar, userId, newRoom
             //tạo ID
-            const fullTime = fullYear();
+            const fullTime = getUTC(new Date());
             const id = data.userId.toString() + '-' + fullTime;
 
             //format lại ngày, thời gian bắt đầu, kết thúc theo lịch đặt của user
