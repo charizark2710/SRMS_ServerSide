@@ -28,14 +28,15 @@ export class ChangeRoomController {
             const fullTime = parseInt(tempFullTime[1]);
             const room = response.locals.room;
             const snap = await calendarSchema.child(tempFullTime[0]).orderByKey().startAt(room + " ").endAt(room + "~").get();
-            for (let value of Object.values(snap.val())) {
+            for (const [key, value] of Object.entries(snap.val())) {
                 if ((value as any).userId === response.locals.employeeId) {
+                    
                     const from = parseInt((value as any).from);
                     const to = parseInt((value as any).to);
                     if (fullTime >= from && fullTime <= to && !(value as any).isDone) {
                         console.log('ok rồi');
                         result = {
-                            id: snap.key,
+                            id: key,
                             room: (value as any).room,
                             from: (value as any).from,
                             date: (value as any).date,
