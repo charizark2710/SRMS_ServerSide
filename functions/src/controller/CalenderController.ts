@@ -192,6 +192,7 @@ export default class CalendarController {
                         sendAt: fullTime,
                         isRead: false,
                         id: id,
+                        url: '/bookRoomRequest/' + id
                     });
                     response.status(200).send('ok');
                 } else {
@@ -205,6 +206,7 @@ export default class CalendarController {
                     sendAt: fullTime,
                     isRead: false,
                     id: id,
+                    url: '/bookRoomRequest/' + id
                 });
                 response.status(200).send('ok');
             }
@@ -275,7 +277,7 @@ export default class CalendarController {
             const id = request.params.id;
             if (date) {
                 const result = (await calendarSchema.child(date as string).child(id).get()).val() as Calendar;
-                !result.isDone ? response.status(200).json(result) : response.status(400).json({ error: "da xoa roi" });
+                response.status(200).json(result);
             }
         } catch (error) {
             response.status(500).send(error);

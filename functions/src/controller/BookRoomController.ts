@@ -32,15 +32,9 @@ export class BookRoomController {
             const id = data.userId.toString() + '-' + fullTime;//tránh trùng lịch bị overrride + dễ truy vấn khi xem chi tiết
 
             //format lại ngày, thời gian bắt đầu, kết thúc theo lịch đặt của user
-            const bookingTime = data.date;
-            const startTime = data.startTime;
-            const endTime = data.endTime;
-            const tempFullDate = bookingTime.split("-");
-            const fullDate = tempFullDate[0] + tempFullDate[1] + tempFullDate[2];
-            const tempStartTime = startTime.split(":");
-            const fullStartTime = tempStartTime[0] + tempStartTime[1] + "00000";
-            const tempEndTime = endTime.split(":");
-            const fullEndTime = tempEndTime[0] + tempEndTime[1] + "00000";
+            const fullDate =  data.date;
+            const fullStartTime = data.startTime;
+            const fullEndTime = data.endTime;
 
             await db.ref('booking').child(id)
                 .set({
@@ -230,15 +224,9 @@ export class BookRoomController {
             const fullTime = getUTC(new Date());
 
             //format lại ngày, thời gian bắt đầu, kết thúc theo lịch đặt của user
-            const bookingTime = data.date;
-            const startTime = data.startTime;
-            const endTime = data.endTime;
-            const tempFullDate = bookingTime.split("-");
-            const fullDate = tempFullDate[0] + tempFullDate[1] + tempFullDate[2];
-            const tempStartTime = startTime.split(":");
-            const fullStartTime = tempStartTime[0] + tempStartTime[1] + "00000";
-            const tempEndTime = endTime.split(":");
-            const fullEndTime = tempEndTime[0] + tempEndTime[1] + "00000";
+            const fullDate = data.date;
+            const fullStartTime = data.startTime;
+            const fullEndTime = data.endTime;
             const id = data.id?.split('-')[0].toString() + '-' + fullTime;
 
             await db.ref('booking').child(data.id).update({
@@ -283,26 +271,10 @@ export class BookRoomController {
     getAvailableRooms = async (request: express.Request, response: express.Response) => {
         try {
             // let result;
-            let fullDate: string = '', reqStartTime: number, reqEndTime: number, busyRoom: any[] = [], allRooms: any[] = [], result: any[] = []
-            const date = request.query.date?.toString();
-            const qstartTime = request.query.startTime?.toString();
-            const qendTime = request.query.endTime?.toString();
-
-            const tempFullDate = date?.split("-");
-            if (tempFullDate) {
-                fullDate = tempFullDate[0] + tempFullDate[1] + tempFullDate[2];
-            }
-            const tempStartTime = qstartTime?.split(":");
-            if (tempStartTime) {
-                let fullStartTime = tempStartTime[0] + tempStartTime[1] + "00000";
-                reqStartTime = parseInt(fullStartTime)
-            }
-            const tempEndTime = qendTime?.split(":");
-            if (tempEndTime) {
-                let fullEndTime = tempEndTime[0] + tempEndTime[1] + "00000";
-                reqEndTime = parseInt(fullEndTime)
-            }
-
+            let busyRoom: any[] = [], allRooms: any[] = [], result: any[] = []
+            const fullDate = request.query.date?.toString() as string;
+            const reqStartTime = parseInt(request.query.startTime?.toString() as string);
+            const reqEndTime = parseInt(request.query.endTime?.toString() as string);
 
             (await calendarSchema.child(fullDate).get()).forEach(snap => {
                 const value: Calendar = snap.val();
@@ -353,19 +325,6 @@ export class BookRoomController {
             })
 
             result = allRooms.filter(x => !busyRoom.includes(x));
-
-            busyRoom.forEach(x => {
-                console.log("busy :" + x);
-            })
-            console.log("length: " + busyRoom.length);
-            allRooms.forEach(x => {
-                console.log("all :" + x);
-
-            })
-            result.forEach(x => {
-                console.log("result :" + x);
-
-            })
 
             return response.status(200).json(result);
         } catch (err) {
