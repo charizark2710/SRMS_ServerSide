@@ -11,7 +11,7 @@ import { mediaServer } from './media-server/media'
 import * as posenet from '@tensorflow-models/posenet'
 import { Reference } from 'firebase-admin/node_modules/@firebase/database-types/index'
 import { roomSchema } from './model/Room'
-import getUTC, {getDate} from './common/formatDate'
+import getUTC, { getDate } from './common/formatDate'
 
 const socket = dgram.createSocket({ type: 'udp4', reuseAddr: true }, (buffer, sender) => {
     const message = buffer.toString();
@@ -70,10 +70,12 @@ roomRef.push = function (arg) {
             reportObj[key] = (currentReport && currentReport[key]) ? currentReport[key] + (date.getTime() - currentRoomReport[key]) : 0 + (date.getTime() - currentRoomReport[key]);
             reSchema.update(reportObj);
             let totalEachDevice: any = { fan: 0, light: 0, powerPlug: 0, conditioner: 0 };
+            roSchema.update(totalEachDevice);
             let total = 0;
             (await reSchema.get()).forEach(snapReport => {
-                if (snapReport.key !== 'total')
+                if (snapReport.key !== 'total') {
                     totalEachDevice[snapReport.key as string] += snapReport.val() as number;
+                }
             });
             await Object.values(totalEachDevice).forEach(val => {
                 total += val as number;
