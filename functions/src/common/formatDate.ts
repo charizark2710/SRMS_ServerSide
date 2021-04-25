@@ -28,9 +28,9 @@ export default function getUTC(now: Date) {
 }
 
 export function formatDate(date: string) {
-    return (date as string).substring(0, 4).concat('-', (date as string).substring(4, 6), '-', (date as string).substring(6));
+    return date.substring(0, 4).concat('-', date.substring(4, 6), '-', date.substring(6));
 }
 
 export function formatTime(time: string) {
-    return (time as string).substring(0, 2).concat(':', (time as string).substring(2, 4));
+    return time.substring(0, 2).concat(':', time.substring(2, 4));
 }
