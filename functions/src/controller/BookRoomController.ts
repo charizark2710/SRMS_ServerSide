@@ -96,7 +96,7 @@ export class BookRoomController {
             await db.ref('booking').child(id).get().then(function (snapshot) {
                 if (snapshot.exists()) {
                     result = snapshot.val();
-                    result["userId"] = id?.split("-")[0];
+                    result["userId"] = id?.split("-")[2];
                 }
                 else {
                     console.log("No data available");

@@ -228,6 +228,7 @@ export default class CalendarController {
                 response.status(200).send('ok');
             }
         } catch (error) {
+            console.log(error);
             response.status(500).json(error);
         }
     }
