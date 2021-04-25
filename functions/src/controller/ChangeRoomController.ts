@@ -5,7 +5,7 @@ import auth from './Authenticate';
 import { roomPermission } from './Authorized';
 import { Calendar, calendarSchema } from '../model/Calendar'
 import { userSchema } from '../model/UserModel'
-import getUTC from '../common/formatDate'
+import getUTC, { formatDate, formatTime } from '../common/formatDate'
 
 export class ChangeRoomController {
     public router = express.Router();
@@ -63,13 +63,9 @@ export class ChangeRoomController {
     sendChangeRoomRequest = async (request: express.Request, response: express.Response) => {
         try {
             const data = request.body; //id trong calendar, userId, room, date, reason
-
             const fullTime = getUTC(new Date());
             const id = data.userId.toString() + '-' + fullTime;//tránh trùng lịch bị overrride + dễ truy vấn khi xem chi tiết
-
-            const changeDate = data.date;
-            const tempFullDate = changeDate.split("-");
-            const currentDate = tempFullDate[0] + tempFullDate[1] + tempFullDate[2];
+            const currentDate = data.date;
 
             await calendarSchema.child(currentDate).child(data.calendarId).get().then(async (snapshot) => {
                 if (snapshot.exists()) {
@@ -107,7 +103,7 @@ export class ChangeRoomController {
                 sendAt: fullTime,
                 isRead: false,
                 id: id,
-                url: "/changeRoomRequest/" + currentDate + "~" + data.calendarId,
+                url: "/changeRoomRequest/" + currentDate + "~" + data.calendarId + '~' + id,
             });
             //gửi cho chính user đổi phòng
             notification.sendMessage({
@@ -117,6 +113,7 @@ export class ChangeRoomController {
                 sendAt: fullTime,
                 isRead: false,
                 id: id,
+                url: "/changeRoomRequest/" + currentDate + "~" + data.calendarId + '~' + id,
             });
             return response.status(200).json("ok");
         } catch (err) {
@@ -140,7 +137,7 @@ export class ChangeRoomController {
             const data = request.body; //id trong calendar, userId, newRoom
             //tạo ID
             const fullTime = getUTC(new Date());
-            const id = data.userId.toString() + '-' + fullTime;
+            const id = 'admin' + '-' + fullTime;
 
             let isOcc: boolean = false;
             const reqFrom = parseInt(data.from);
@@ -189,7 +186,7 @@ export class ChangeRoomController {
                 (await db.ref('booking').orderByKey().startAt(userId + " ").endAt(userId + "~").get()).forEach((snap: any) => {
                     const snapValue = snap.val();
                     if (snapValue.startTime === reqFrom.toString() && snapValue.endTime === reqTo.toString() &&
-                        snapValue.date === data.Date && snapValue.roomName === data.room.toString() && snapValue.status === 'changing') {
+                        snapValue.date === data.date && snapValue.roomName === data.room.toString() && snapValue.status === 'changing') {
                         currentBookingId = snap.key;
                         return;
                     }
@@ -215,6 +212,11 @@ export class ChangeRoomController {
                     id: id,
                     url: "/changeRoomRequest/" + val.date + '~' + data.newRoom + reqFrom + reqTo
                 });
+
+                db.ref('notification').child('admin').child(id.toString()).update({
+                    isRead: true
+                });
+
                 response.status(200).json("ok");
             } else {
                 return response.status(400).send('Lich kin roi');

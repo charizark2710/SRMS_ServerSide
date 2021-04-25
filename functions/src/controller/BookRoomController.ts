@@ -4,7 +4,7 @@ import notification from './NotificationManagement'
 import auth from './Authenticate';
 import { Calendar, calendarSchema } from '../model/Calendar';
 import { BookingRoom } from '../model/BookingRoom';
-import getUTC from '../common/formatDate'
+import getUTC, { formatTime, formatDate } from '../common/formatDate'
 
 export class BookRoomController {
     public router = express.Router();
@@ -32,7 +32,7 @@ export class BookRoomController {
             const id = data.userId.toString() + '-' + fullTime;//tránh trùng lịch bị overrride + dễ truy vấn khi xem chi tiết
 
             //format lại ngày, thời gian bắt đầu, kết thúc theo lịch đặt của user
-            const fullDate =  data.date;
+            const fullDate = data.date;
             const fullStartTime = data.startTime;
             const fullEndTime = data.endTime;
 
@@ -51,7 +51,7 @@ export class BookRoomController {
                     } else {
                         //gửi cho admin
                         notification.sendMessage({
-                            message: ' sent a request to book room ' + data.roomName + ' at ' + data.date + ' from ' + data.startTime + ' to ' + data.endTime,
+                            message: ' sent a request to book room ' + data.roomName + ' at ' + formatDate(fullDate) + ' from ' + formatTime(data.startTime) + ' to ' + formatTime(data.endTime),
                             receiver: "admin",
                             sender: data.userId,
                             sendAt: fullTime,
@@ -61,7 +61,7 @@ export class BookRoomController {
                         });
                         //gửi cho chính user đặt phòng
                         notification.sendMessage({
-                            message: 'Sending request to book room ' + data.roomName + ' at ' + data.date + ' ' + data.startTime + '-' + data.endTime + " successfully",
+                            message: 'Sending request to book room ' + data.roomName + ' at ' + formatDate(fullDate) + ' from ' + formatTime(data.startTime) + ' to ' + formatTime(data.endTime),
                             receiver: data.userId,
                             sender: "admin",
                             sendAt: fullTime,

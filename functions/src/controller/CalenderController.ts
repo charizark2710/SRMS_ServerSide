@@ -146,6 +146,7 @@ export default class CalendarController {
             let isOcc: boolean = false;
             const fullTime = getUTC(new Date());
             const id = data.userId.toString() + '-' + fullTime;
+            let errorMessage: string = '';
 
             if (!(await userSchema.child(data.userId).get()).exists()) {
                 return response.status(500).send('Sai uid');
@@ -153,20 +154,33 @@ export default class CalendarController {
             if (data.status === "accepted") {
                 // const test = new Date(parseInt(data.date.slice(0, 4)), parseInt(data.date.slice(4, 6)) - 1, parseInt(data.date.slice(6, 8)));
                 isOcc = (await calendarSchema.child(data.date).get()).forEach(snap => {
-                    const value: Calendar = snap.val();
+                    const value = snap.val() as Calendar;
                     const from = parseInt(value.from);
                     const to = parseInt(value.to);
                     if (!value.isDone) {
-                        if (data.userId === value.userId) return true;
-                        if (value.date === data.date && value.room === data.room) {
+                        if (value.room === data.room) {
                             if (reqFrom === from || reqTo === to) {
+                                errorMessage = 'The schedule is full';
                                 return true;
                             } else if (reqFrom > from && reqFrom < to) {
+                                errorMessage = 'The schedule is full';
                                 return true;
                             } else if (reqTo > from && reqTo < to) {
+                                errorMessage = 'The schedule is full';
                                 return true;
-                            } else if (reqFrom < from && reqTo > to) {
-                                return true;
+                            }
+                        } else {
+                            if (value.userId === data.userId) {
+                                if (reqFrom === from || reqTo === to) {
+                                    errorMessage = 'Cannot have 2 authenticate at the same time';
+                                    return true;
+                                } else if (reqFrom > from && reqFrom < to) {
+                                    errorMessage = 'Cannot have 2 authenticate at the same time';
+                                    return true;
+                                } else if (reqTo > from && reqTo < to) {
+                                    errorMessage = 'Cannot have 2 authenticate at the same time';
+                                    return true;
+                                }
                             }
                         }
                     }
@@ -196,7 +210,7 @@ export default class CalendarController {
                     });
                     response.status(200).send('ok');
                 } else {
-                    response.status(400).json('Lich kin roi');
+                    response.status(400).json(errorMessage);
                 }
             } else {
                 notification.sendMessage({
@@ -223,19 +237,36 @@ export default class CalendarController {
             const data: Calendar = request.body;
             const reqFrom = parseInt(data.from);
             const reqTo = parseInt(data.to);
+            let errorMessage: string = '';
             let isOcc: boolean = false;
             isOcc = (await calendarSchema.child(data.date).get()).forEach(snap => {
-                const value: Calendar = snap.val();
+                const value = snap.val() as Calendar;
                 const from = parseInt(value.from);
                 const to = parseInt(value.to);
                 if (!value.isDone) {
-                    if (value.date === data.date && value.room === data.room) {
+                    if (value.room === data.room) {
                         if (reqFrom === from || reqTo === to) {
+                            errorMessage = 'The schedule is full';
                             return true;
                         } else if (reqFrom > from && reqFrom < to) {
+                            errorMessage = 'The schedule is full';
                             return true;
                         } else if (reqTo > from && reqTo < to) {
+                            errorMessage = 'The schedule is full';
                             return true;
+                        }
+                    } else {
+                        if (value.userId === data.userId) {
+                            if (reqFrom === from || reqTo === to) {
+                                errorMessage = 'Cannot have 2 authenticate at the same time';
+                                return true;
+                            } else if (reqFrom > from && reqFrom < to) {
+                                errorMessage = 'Cannot have 2 authenticate at the same time';
+                                return true;
+                            } else if (reqTo > from && reqTo < to) {
+                                errorMessage = 'Cannot have 2 authenticate at the same time';
+                                return true;
+                            }
                         }
                     }
                 }
@@ -248,7 +279,7 @@ export default class CalendarController {
                 adminAuth.setCustomUserClaims(uid, { ...(await adminAuth.getUser(uid)).customClaims, room: data.room });
                 response.status(200).send('ok');
             } else {
-                response.status(400).send('Lich kin roi');
+                response.status(400).send(errorMessage);
             }
         } catch (error) {
             response.status(500).send(error);
@@ -275,9 +306,11 @@ export default class CalendarController {
         try {
             const date = request.query.date;
             const id = request.params.id;
+            const notiId = request.query.notiId;
             if (date) {
                 const result = (await calendarSchema.child(date as string).child(id).get()).val() as Calendar;
                 response.status(200).json(result);
+                notification.updateIsRead(notiId as string);
             }
         } catch (error) {
             response.status(500).send(error);
