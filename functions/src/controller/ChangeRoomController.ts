@@ -64,7 +64,7 @@ export class ChangeRoomController {
         try {
             const data = request.body; //id trong calendar, userId, room, date, reason
             const fullTime = getUTC(new Date());
-            const id = data.userId.toString() + '-' + fullTime;//tránh trùng lịch bị overrride + dễ truy vấn khi xem chi tiết
+            const id = fullTime + '-' + data.userId.toString(); //tránh trùng lịch bị overrride + dễ truy vấn khi xem chi tiết
             const currentDate = data.date;
 
             await calendarSchema.child(currentDate).child(data.calendarId).get().then(async (snapshot) => {
@@ -137,7 +137,7 @@ export class ChangeRoomController {
             const data = request.body; //id trong calendar, userId, newRoom
             //tạo ID
             const fullTime = getUTC(new Date());
-            const id = 'admin' + '-' + fullTime;
+            const id = fullTime + 'admin';
 
             let isOcc: boolean = false;
             const reqFrom = parseInt(data.from);

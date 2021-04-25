@@ -29,7 +29,7 @@ export class ReportErrorController {
 
             //tạo ID
             const fullTime = getUTC(new Date());
-            const id = data.userId.toString() + '-' + fullTime;//tránh trùng lịch bị overrride + dễ truy vấn khi xem chi tiết
+            const id = fullTime + data.userId.toString();//tránh trùng lịch bị overrride + dễ truy vấn khi xem chi tiết
 
             let deviceNames = "";
             if (data.deviceNames) {
@@ -37,7 +37,6 @@ export class ReportErrorController {
                     deviceNames += " " + d + " "
                 });
             }
-
 
             await db.ref('complaint').child(id).set({
                 roomName: data.roomName,
@@ -167,6 +166,7 @@ export class ReportErrorController {
                         sendAt: fullTime,
                         isRead: false,
                         id: id,
+                        url: "/reportErrorRequest/" + id,
                     });
                 }
             });
@@ -200,7 +200,7 @@ export class ReportErrorController {
         try {
             const data = request.body;
             const fullTime = getUTC(new Date());
-            const id = data.id?.split('-')[0].toString() + '-' + fullTime;
+            const id = fullTime + '-' + data.id?.split('-')[0].toString();
 
             await db.ref('complaint').child(data.id).update({
                 roomName: data.roomName,

@@ -145,7 +145,7 @@ export default class CalendarController {
             const reqTo = parseInt(data.to);
             let isOcc: boolean = false;
             const fullTime = getUTC(new Date());
-            const id = data.userId.toString() + '-' + fullTime;
+            const id = fullTime + '-' + data.userId.toString();
             let errorMessage: string = '';
 
             if (!(await userSchema.child(data.userId).get()).exists()) {

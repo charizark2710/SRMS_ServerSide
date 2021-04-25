@@ -29,7 +29,7 @@ export class BookRoomController {
 
             //tạo ID
             const fullTime = getUTC(new Date());
-            const id = data.userId.toString() + '-' + fullTime;//tránh trùng lịch bị overrride + dễ truy vấn khi xem chi tiết
+            const id = fullTime + '-' + data.userId.toString();//tránh trùng lịch bị overrride + dễ truy vấn khi xem chi tiết
 
             //format lại ngày, thời gian bắt đầu, kết thúc theo lịch đặt của user
             const fullDate = data.date;
@@ -118,7 +118,7 @@ export class BookRoomController {
             const status = request.query.status;
             const userId = bookingId?.split('-')[0] || ' ';
             const fullTime = getUTC(new Date());
-            const id = userId.toString() + '-' + fullTime;
+            const id = fullTime + '-' + userId.toString();
 
             //nếu đổi phòng
             if (status === "changing") {
@@ -230,7 +230,7 @@ export class BookRoomController {
             const fullDate = data.date;
             const fullStartTime = data.startTime;
             const fullEndTime = data.endTime;
-            const id = data.id?.split('-')[0].toString() + '-' + fullTime;
+            const id = fullTime + '-' + data.id?.split('-')[0].toString();
 
             await db.ref('booking').child(data.id).update({
                 date: fullDate,

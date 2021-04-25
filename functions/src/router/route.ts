@@ -6,11 +6,11 @@ import CalendarController from '../controller/CalenderController'
 import { UserController } from '../controller/UserController';
 import { BookRoomController } from '../controller/BookRoomController'
 import { RoomController } from '../controller/RoomController'
-import {ReportErrorController} from '../controller/ReportErrorController'
-import {RequestListController} from '../controller/RequestListController'
-import {ChangeRoomController} from '../controller/ChangeRoomController'
-import {ReportController} from '../controller/ReportController'
-import {NotifyController} from '../controller/NotifyController'
+import { ReportErrorController } from '../controller/ReportErrorController'
+import { RequestListController } from '../controller/RequestListController'
+import { ChangeRoomController } from '../controller/ChangeRoomController'
+import { ReportController } from '../controller/ReportController'
+import { NotifyController } from '../controller/NotifyController'
 
 export class Route {
     app: express.Application;
@@ -33,8 +33,9 @@ export class Route {
 
     routers() {
         this.app.get('/', auth, (req, res) => {
-            res.json({role: res.locals.role});
+            res.json({ role: res.locals.role });
         });
+        
         this.app.use('/', this.logout.router);
         this.app.use('/', this.userController.router);
         this.app.use('/', this.calendarController.router);
