@@ -103,7 +103,7 @@ export class ChangeRoomController {
                 sendAt: fullTime,
                 isRead: false,
                 id: id,
-                url: "/changeRoomRequest/" + currentDate + "~" + data.calendarId + '~' + id,
+                url: "/changeRoomRequest/" + currentDate + "~" + data.calendarId,
             });
             //gửi cho chính user đổi phòng
             notification.sendMessage({
@@ -113,7 +113,7 @@ export class ChangeRoomController {
                 sendAt: fullTime,
                 isRead: false,
                 id: id,
-                url: "/changeRoomRequest/" + currentDate + "~" + data.calendarId + '~' + id,
+                url: "/changeRoomRequest/" + currentDate + "~" + data.calendarId,
             });
             return response.status(200).json("ok");
         } catch (err) {

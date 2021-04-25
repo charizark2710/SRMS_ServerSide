@@ -222,6 +222,9 @@ export default class CalendarController {
                     id: id,
                     url: '/bookRoomRequest/' + id
                 });
+                await db.ref('booking').child(data.id).update({
+                    status: data.status,
+                });
                 response.status(200).send('ok');
             }
         } catch (error) {
@@ -309,8 +312,8 @@ export default class CalendarController {
             const notiId = request.query.notiId;
             if (date) {
                 const result = (await calendarSchema.child(date as string).child(id).get()).val() as Calendar;
-                response.status(200).json(result);
                 notification.updateIsRead(notiId as string);
+                response.status(200).json(result);
             }
         } catch (error) {
             response.status(500).send(error);

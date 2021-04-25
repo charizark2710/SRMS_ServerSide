@@ -89,7 +89,8 @@ export class BookRoomController {
                 status: "",
             };
             const id = request.params.id;
-            db.ref('notification').child('admin').child(id.toString()).update({
+            const notiId = request.query.notiId;
+            db.ref('notification').child('admin').child(notiId as string).update({
                 isRead: true
             });
             await db.ref('booking').child(id).get().then(function (snapshot) {
@@ -142,6 +143,7 @@ export class BookRoomController {
                         sendAt: fullTime,
                         isRead: false,
                         id: id,
+                        url: "/bookRoomRequest/" + bookingId,
                     });
 
                 })
@@ -184,6 +186,7 @@ export class BookRoomController {
                         sendAt: fullTime,
                         isRead: false,
                         id: id,
+                        url: "/bookRoomRequest/" + bookingId,
                     });
 
                 })
