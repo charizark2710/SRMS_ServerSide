@@ -4,6 +4,7 @@ import { adminAuth } from '../connector/configFireBase'
 import { userSchema, User } from '../model/UserModel'
 import { calendarSchema } from '../model/Calendar'
 import { roomSchema } from '../model/Room'
+import getUTC, { getDate } from '../common/formatDate'
 
 let t: any = undefined;
 
@@ -23,9 +24,7 @@ export default class Schedule {
     }
 
     timer(YMD: string) {
-        let currentTime = new Date();
-        currentTime = new Date(Date.UTC(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate(),
-            currentTime.getHours() - 7, currentTime.getMinutes(), currentTime.getSeconds(), currentTime.getMilliseconds()));;
+        const currentTime = getDate(new Date());
         currentTime.setMilliseconds(0);
         const tempM = (currentTime.getMonth() + 1).toString();
         const tempD = currentTime.getDate().toString();
@@ -46,15 +45,16 @@ export default class Schedule {
             const fullTime = hours.concat(min, sec, '000');
             timeBuffer.forEach(async val => {
                 const value = val.split('-');
-                const timeTemp = new Date(currentTime.getTime());
+                const timeTemp = getDate(new Date(currentTime.getTime()));
                 const startTime = timeTemp.setHours(parseInt(value[1].substring(0, 2)), parseInt(value[1].substring(2, 4)), parseInt(value[1].substring(4, 6)), parseInt(value[1].substring(6)));
                 const endTime = timeTemp.setHours(parseInt(value[2].substring(0, 2)), parseInt(value[2].substring(2, 4)), parseInt(value[2].substring(4, 6)), parseInt(value[2].substring(6)));
                 const halfHours = 60 * 30 * 1000;
                 if (Math.abs(startTime - currentTime.getTime()) === halfHours) {
+                    console.log('ok' + val);
                     notification.sendMessage({ id: `${YMD.concat('-', fullTime)}-admin`, isRead: false, message: `Còn 30p là đến phòng ${value[3]} với lý do ${value[4]}`, receiver: value[0], sender: "admin", sendAt: YMD.concat('-', fullTime), url: 'not thing' });
                 }
                 else if (Math.abs(endTime - currentTime.getTime()) === halfHours) {
-                    notification.sendMessage({ id: `${YMD.concat('-', fullTime)}-admin`, isRead: false, message: `Còn 30p là hết giờ phòng ${value[3]} với lý do ${value[4]}`, receiver: value[0], sender: "admin", sendAt: YMD.concat('-', fullTime),url: 'not thing' });
+                    notification.sendMessage({ id: `${YMD.concat('-', fullTime)}-admin`, isRead: false, message: `Còn 30p là hết giờ phòng ${value[3]} với lý do ${value[4]}`, receiver: value[0], sender: "admin", sendAt: YMD.concat('-', fullTime), url: 'not thing' });
                 }
                 if (value[1] === fullTime) {
                     const userInfo: User = (await userSchema.child(value[0]).get()).val();

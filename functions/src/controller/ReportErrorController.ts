@@ -29,7 +29,7 @@ export class ReportErrorController {
 
             //tạo ID
             const fullTime = getUTC(new Date());
-            const id = fullTime + data.userId.toString();//tránh trùng lịch bị overrride + dễ truy vấn khi xem chi tiết
+            const id = fullTime + '-' + data.userId.toString();//tránh trùng lịch bị overrride + dễ truy vấn khi xem chi tiết
 
             let deviceNames = "";
             if (data.deviceNames) {
@@ -105,7 +105,6 @@ export class ReportErrorController {
         try {
             const reportErrId = request.params.id;
             const message = request.query.message;
-            const actionNotiId = request.query.actionNotiId;
             const userId = reportErrId?.split('-')[0] || ' ';
             const fullTime = getUTC(new Date());
             const id = userId.toString() + '-' + fullTime;
@@ -149,8 +148,7 @@ export class ReportErrorController {
         try {
             const data = request.body;
             const fullTime = getUTC(new Date());
-            const id = data.userId.toString() + '-' + fullTime;
-
+            const id = fullTime + '-' + data.userId.toString();
 
             await db.ref('complaint').child(data.id).update({
                 status: data.status,

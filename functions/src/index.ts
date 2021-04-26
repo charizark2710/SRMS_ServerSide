@@ -80,8 +80,7 @@ roomRef.push = function (arg) {
             await Object.values(totalEachDevice).forEach(val => {
                 total += val as number;
             });
-            await reSchema.update(totalEachDevice);
-            await reSchema.update({ total: total });
+            await reSchema.update({ total: total, totalEachDevice });
         }
         else {
             deviceObj[key] = date.getTime();

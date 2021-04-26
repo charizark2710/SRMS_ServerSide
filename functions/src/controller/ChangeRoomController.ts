@@ -170,7 +170,7 @@ export class ChangeRoomController {
                     isDone: true
                 })
                 //4.3 new mới trong calendar
-                await calendarSchema.child(data.date).child(data.newRoom.concat('-', reqFrom, '-', reqTo)).set({
+                await calendarSchema.child(data.date).child(data.newRoom.concat('-', val.from, '-', val.to)).set({
                     date: val.date,
                     from: val.from,
                     to: val.to,

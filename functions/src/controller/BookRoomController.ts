@@ -44,7 +44,7 @@ export class BookRoomController {
                     endTime: fullEndTime,
                     reason: data.reason,
                     status: "pending",
-                    actionNotiId: id
+                    userId: data.userId.toString()
                 }, async (error) => {
                     if (error) {
                         response.status(500).send(error);
@@ -116,7 +116,7 @@ export class BookRoomController {
             const bookingId = request.params.id;
             const message = request.query.message;
             const status = request.query.status;
-            const userId = bookingId?.split('-')[0] || ' ';
+            const userId = bookingId?.split('-')[2] || ' ';
             const fullTime = getUTC(new Date());
             const id = fullTime + '-' + userId.toString();
 
@@ -238,7 +238,7 @@ export class BookRoomController {
                 startTime: fullStartTime,
                 endTime: fullEndTime,
                 reason: data.reason,
-                actionNotiId: id,
+                userId: data.id?.split('-')[0].toString(),
             }, (error) => {
                 if (error) {
                     response.status(500).send(error);
