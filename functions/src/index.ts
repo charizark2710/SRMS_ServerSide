@@ -71,14 +71,6 @@ roomRef.push = function (arg) {
         if (value === 0) {
             reportObj[key] = (currentReport && currentReport[key]) ? currentReport[key] + (date.getTime() - currentRoomReport[key]) : 0 + (date.getTime() - currentRoomReport[key]);
             await reSchema.update(reportObj);
-            let totalEachDevice: any = { fan: 0, light: 0, powerPlug: 0, conditioner: 0 };
-            await roSchema.update(totalEachDevice);
-            (await reSchema.get()).forEach(snapReport => {
-                if (snapReport.key !== 'total') {
-                    totalEachDevice[snapReport.key as string] += snapReport.val() as number;
-                }
-            });
-            await reSchema.update(totalEachDevice);
         }
         else {
             deviceObj[key] = date.getTime();
@@ -107,19 +99,11 @@ roomRef.push = function (arg) {
         const reportObj: any = {};
         if (value === 0) {
             reportObj[key] = (currentReport && currentReport[key]) ? currentReport[key] + (date.getTime() - currentRoomReport[key]) : 0 + (date.getTime() - currentRoomReport[key]);
-            reSchema.update(reportObj);
-            let totalEachDevice: any = { fan: 0, light: 0, powerPlug: 0, conditioner: 0 };
-            roSchema.update(totalEachDevice);
-            (await reSchema.get()).forEach(snapReport => {
-                if (snapReport.key !== 'total') {
-                    totalEachDevice[snapReport.key as string] += snapReport.val() as number;
-                }
-            });
-            await reSchema.update(totalEachDevice);
+            await reSchema.update(reportObj);
         }
         else {
             deviceObj[key] = date.getTime();
-            roSchema.update(deviceObj);
+            await roSchema.update(deviceObj);
         }
     });
     return Array.prototype.push.apply(this);
