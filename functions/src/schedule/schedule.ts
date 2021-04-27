@@ -8,6 +8,17 @@ import getUTC, { getDate } from '../common/formatDate'
 
 let t: any = undefined;
 
+const giveAuthen = async (userId: string, room: string | null) => {
+    const promise = new Promise<User>(async (resolve, reject) => {
+        const userInfo: User = (await userSchema.child(userId).get()).val();
+        if (userInfo) {
+            await adminAuth.setCustomUserClaims(userInfo.uid, { ...(await adminAuth.getUser(userInfo.uid)).customClaims, room: room });
+            resolve(userInfo);
+        }
+    });
+    return promise;
+};
+
 export default class Schedule {
     constructor() {
         console.log("Start Timer");
@@ -57,21 +68,19 @@ export default class Schedule {
                     notification.sendMessage({ id: `${YMD.concat('-', fullTime)}-admin`, isRead: false, message: `Còn 30p là hết giờ phòng ${value[3]} với lý do ${value[4]}`, receiver: value[0], sender: "admin", sendAt: YMD.concat('-', fullTime), url: 'not thing' });
                 }
                 if (value[1] === fullTime) {
-                    const userInfo: User = (await userSchema.child(value[0]).get()).val();
                     notification.sendMessage({ id: `${YMD.concat('-', fullTime)}-admin`, isRead: false, message: `Đến giờ phòng ${value[3]} với lý do ${value[4]}`, receiver: value[0], sender: "admin", sendAt: YMD.concat('-', fullTime), url: 'not thing' });
-                    await adminAuth.setCustomUserClaims(userInfo.uid, { ...(await adminAuth.getUser(userInfo.uid)).customClaims, room: value[3] });
+                    giveAuthen(value[0], value[3]);
                 }
                 else if (value[2] === fullTime) {
-                    const userInfo: User = (await userSchema.child(value[0]).get()).val();
                     notification.sendMessage({ id: `${YMD.concat('-', fullTime)}-admin`, isRead: false, message: `Hết Giờ phòng ${value[3]} với lý do ${value[4]}`, receiver: value[0], sender: "admin", sendAt: YMD.concat('-', fullTime), url: 'not thing' });
-                    await calendarSchema.child(YMD).child(value[3].concat('-', value[1], '-', value[2])).update({ isDone: true });
-                    await roomSchema.child(value[3]).child('device').update({
+                    calendarSchema.child(YMD).child(value[3].concat('-', value[1], '-', value[2])).update({ isDone: true });
+                    giveAuthen(value[0], null);
+                    roomSchema.child(value[3]).child('device').update({
                         conditioner: 0,
                         fan: 0,
                         light: 0,
                         powerPlug: 0
                     });
-                    await adminAuth.setCustomUserClaims(userInfo.uid, { ...(await adminAuth.getUser(userInfo.uid)).customClaims, room: null });
                 }
             });
         }
