@@ -11,7 +11,7 @@ import { mediaServer } from './media-server/media'
 import * as posenet from '@tensorflow-models/posenet'
 import { Reference } from 'firebase-admin/node_modules/@firebase/database-types/index'
 import { roomSchema } from './model/Room'
-import getUTC, { getDate } from './common/formatDate'
+import getUTC, { getDate, getCurrentDate } from './common/formatDate'
 
 const socket = dgram.createSocket({ type: 'udp4', reuseAddr: true }, (buffer, sender) => {
     const message = buffer.toString();
@@ -51,7 +51,7 @@ const roomRef: Reference[] = [];
 roomRef.push = function (arg) {
     arg.on('child_changed', async snap => {
         const date = getDate(new Date());
-        const fullDate = getUTC(date);
+        const fullDate = getCurrentDate(date);
 
         const reportSchema = db.ref('report');
 
@@ -60,6 +60,45 @@ roomRef.push = function (arg) {
 
         const roSchema = roomSchema.child(arg.parent?.key as string).child('report');
         const reSchema = reportSchema.child(fullDate.split('-')[0]);
+
+        console.log(fullDate);
+
+        const currentRoomReport = (await roSchema.get()).val();
+        const currentReport = (await reSchema.get()).val();
+
+        const deviceObj: any = {};
+        const reportObj: any = {};
+        if (value === 0) {
+            reportObj[key] = (currentReport && currentReport[key]) ? currentReport[key] + (date.getTime() - currentRoomReport[key]) : 0 + (date.getTime() - currentRoomReport[key]);
+            await reSchema.update(reportObj);
+            let totalEachDevice: any = { fan: 0, light: 0, powerPlug: 0, conditioner: 0 };
+            await roSchema.update(totalEachDevice);
+            (await reSchema.get()).forEach(snapReport => {
+                if (snapReport.key !== 'total') {
+                    totalEachDevice[snapReport.key as string] += snapReport.val() as number;
+                }
+            });
+            await reSchema.update(totalEachDevice);
+        }
+        else {
+            deviceObj[key] = date.getTime();
+            await roSchema.update(deviceObj);
+        }
+    });
+
+    arg.off('child_changed', async snap => {
+        const date = getDate(new Date());
+        const fullDate = getCurrentDate(date);
+
+        const reportSchema = db.ref('report');
+
+        const key = snap.key as string;
+        const value = snap.val();
+
+        const roSchema = roomSchema.child(arg.parent?.key as string).child('report');
+        const reSchema = reportSchema.child(fullDate.split('-')[0]);
+
+        console.log(fullDate);
 
         const currentRoomReport = (await roSchema.get()).val();
         const currentReport = (await reSchema.get()).val();
@@ -71,16 +110,12 @@ roomRef.push = function (arg) {
             reSchema.update(reportObj);
             let totalEachDevice: any = { fan: 0, light: 0, powerPlug: 0, conditioner: 0 };
             roSchema.update(totalEachDevice);
-            let total = 0;
             (await reSchema.get()).forEach(snapReport => {
                 if (snapReport.key !== 'total') {
                     totalEachDevice[snapReport.key as string] += snapReport.val() as number;
                 }
             });
-            await Object.values(totalEachDevice).forEach(val => {
-                total += val as number;
-            });
-            await reSchema.update({ total: total, totalEachDevice });
+            await reSchema.update(totalEachDevice);
         }
         else {
             deviceObj[key] = date.getTime();

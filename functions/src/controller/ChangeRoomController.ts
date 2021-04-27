@@ -69,11 +69,11 @@ export class ChangeRoomController {
 
             await calendarSchema.child(currentDate).child(data.calendarId).get().then(async (snapshot) => {
                 if (snapshot.exists()) {
-                    await calendarSchema.child(currentDate).child(data.calendarId).update({ reason: data.reasonToChange });
+                    calendarSchema.child(currentDate).child(data.calendarId).update({ reason: data.reasonToChange });
                     let currentBookingId;
                     const snapShotValue = snapshot.val();
 
-                    (await db.ref('booking').get()).forEach((snap: any) => {
+                    (await db.ref('booking').orderByKey().startAt(snapShotValue.date + ' ').endAt(snapShotValue.date + '~').get()).forEach((snap: any) => {
                         const snapValue = snap.val();
                         if (snapValue.startTime === snapShotValue.from && snapValue.endTime === snapShotValue.to &&
                             snapValue.date === snapShotValue.date && snapValue.status === "accepted" &&
@@ -183,7 +183,7 @@ export class ChangeRoomController {
                 //4.1 update room trong booking
                 let currentBookingId;
 
-                (await db.ref('booking').orderByKey().startAt(userId + " ").endAt(userId + "~").get()).forEach((snap: any) => {
+                (await db.ref('booking').orderByKey().startAt(val.date + " ").endAt(val.date + "~").get()).forEach((snap: any) => {
                     const snapValue = snap.val();
                     if (snapValue.startTime === reqFrom.toString() && snapValue.endTime === reqTo.toString() &&
                         snapValue.date === data.date && snapValue.roomName === data.room.toString() && snapValue.status === 'changing') {
