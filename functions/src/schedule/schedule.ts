@@ -26,7 +26,7 @@ export default class Schedule {
     }
 
     async setSchedule() {
-        !fullDay.currentDay ? await defineDay() : '';
+        defineDay();
         const fullDate = fullDay.currentDay;
         const YMD = fullDate.year.concat(fullDate.month, fullDate.date);
         getBuffer(YMD);
@@ -44,7 +44,7 @@ export default class Schedule {
         const date = tempD.length === 2 ? tempD : '0' + tempD;
         if (!year.concat(month, date).match(YMD)) {
             clearInterval(t);
-            clearBuffer(year, month, date);
+            clearBuffer();
             new Schedule();
         } else {
             const tempH = currentTime.getHours().toString();

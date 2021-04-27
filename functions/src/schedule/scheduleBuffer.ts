@@ -1,15 +1,16 @@
 import { Calendar, calendarSchema } from '../model/Calendar'
+import getUTC, { getDate } from '../common/formatDate'
+
 
 let dateBuffer: string[] = [];
 let timeBuffer: string[] = [];
 const fullDay: any = {};
 
-async function defineDay() {
+function defineDay() {
     Object.defineProperty(fullDay, 'currentDay', {
+        configurable: true,
         get: function () {
-            let fullDate = new Date();
-            fullDate = new Date(Date.UTC(fullDate.getFullYear(), fullDate.getMonth(), fullDate.getDate(),
-                fullDate.getHours() - 7, fullDate.getMinutes(), fullDate.getSeconds(), fullDate.getMilliseconds()));;
+            const fullDate = getDate(new Date());
             const tempM = (fullDate.getMonth() + 1).toString();
             const tempD = fullDate.getDate().toString();
             return {
@@ -17,10 +18,7 @@ async function defineDay() {
                 month: tempM.length === 2 ? tempM : '0' + tempM,
                 date: tempD.length === 2 ? tempD : '0' + tempD,
             }
-        },
-        set: function (val) {
-            this._currentDay = val;
-        },
+        }
     });
 }
 
@@ -65,10 +63,9 @@ function deleteBuffer() {
     });
 }
 
-function clearBuffer(year: string, month: string, date: string) {
+function clearBuffer() {
     dateBuffer = [];
     timeBuffer = [];
-    fullDay.currentDay = { year: year, month: month, date: date };
     calendarSchema.off();
 }
 
