@@ -187,7 +187,7 @@ export default class CalendarController {
                 });
 
                 if (!isOcc) {
-                    await calendarSchema.child(data.date).child(data.room.concat('-', data.from, '-', data.to)).set({
+                    calendarSchema.child(data.date).child(data.room.concat('-', data.from, '-', data.to)).set({
                         date: data.date,
                         from: data.from,
                         isDone: false,
@@ -196,8 +196,9 @@ export default class CalendarController {
                         userId: data.userId,
                         room: data.room
                     });
-                    await db.ref('booking').child(data.id).update({
+                    db.ref('booking').child(data.id).update({
                         status: data.status,
+                        startTime: data.from
                     });
                     notification.sendMessage({
                         message: 'Your request to control room' + data.room + ' is ' + data.status,

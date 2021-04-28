@@ -137,7 +137,7 @@ export class ChangeRoomController {
             const data = request.body; //id trong calendar, userId, newRoom
             //tạo ID
             const fullTime = getUTC(new Date());
-            const id = fullTime + 'admin';
+            const id = fullTime + '-admin';
 
             let isOcc: boolean = false;
             const reqFrom = parseInt(data.from);

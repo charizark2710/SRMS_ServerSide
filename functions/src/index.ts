@@ -119,7 +119,7 @@ db.ref('.info/connected').on('value', async (snap) => {
         }).catch(e => {
             console.log(e);
         });
-        const s: Schedule = new Schedule();
+        new Schedule();
         notification.receiveMessage();
         // let media: mediaServer;
         // while (true) {

@@ -157,14 +157,11 @@ export class BookRoomController {
                     //nếu đã accepted phải hủy trong calendar
                     if (status === "accepted") {
                         let calendarId;
-                        await db.ref('booking').child(bookingId).get().then(snap => {
-                            let value = snap.val();
-                            calendarId = value.date + "/" + value.roomName + "-" + value.startTime + "-" + value.endTime;
-                        });
+                        const value = (await db.ref('booking').child(bookingId).get()).val();
+                        calendarId = value.roomName + "-" + value.startTime + "-" + value.endTime;
                         console.log(calendarId);
-
                         if (calendarId) {
-                            calendarSchema.child(calendarId).update({ isDone: true });
+                            calendarSchema.child(value.date).child(calendarId).update({ isDone: true });
                         }
                     }
 
@@ -188,7 +185,6 @@ export class BookRoomController {
                         id: id,
                         url: "/bookRoomRequest/" + bookingId,
                     });
-
                 })
                     .catch(function (error) {
                         console.log("Cancel failed: " + error.message)
