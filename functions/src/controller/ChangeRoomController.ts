@@ -213,10 +213,6 @@ export class ChangeRoomController {
                     url: "/changeRoomRequest/" + val.date + '~' + data.newRoom + reqFrom + reqTo
                 });
 
-                db.ref('notification').child('admin').child(id.toString()).update({
-                    isRead: true
-                });
-
                 response.status(200).json("ok");
             } else {
                 return response.status(400).send('Lich kin roi');

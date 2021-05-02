@@ -168,6 +168,9 @@ export default class CalendarController {
                             } else if (reqTo > from && reqTo < to) {
                                 errorMessage = 'The schedule is full';
                                 return true;
+                            } else if (reqFrom < from && reqTo > to) {
+                                errorMessage = 'The schedule is full';
+                                return true;
                             }
                         } else {
                             if (value.userId === data.userId) {
@@ -178,6 +181,9 @@ export default class CalendarController {
                                     errorMessage = 'Cannot have 2 authenticate at the same time';
                                     return true;
                                 } else if (reqTo > from && reqTo < to) {
+                                    errorMessage = 'Cannot have 2 authenticate at the same time';
+                                    return true;
+                                } else if (reqFrom < from && reqTo > to) {
                                     errorMessage = 'Cannot have 2 authenticate at the same time';
                                     return true;
                                 }

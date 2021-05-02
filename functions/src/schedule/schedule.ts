@@ -56,7 +56,7 @@ export default class Schedule {
             const fullTime = hours.concat(min, sec, '000');
             timeBuffer.forEach(async val => {
                 const value = val.split('-');
-                const timeTemp = getDate(new Date(currentTime.getTime()));
+                const timeTemp = new Date(currentTime.getTime());
                 const startTime = timeTemp.setHours(parseInt(value[1].substring(0, 2)), parseInt(value[1].substring(2, 4)), parseInt(value[1].substring(4, 6)), parseInt(value[1].substring(6)));
                 const endTime = timeTemp.setHours(parseInt(value[2].substring(0, 2)), parseInt(value[2].substring(2, 4)), parseInt(value[2].substring(4, 6)), parseInt(value[2].substring(6)));
                 const halfHours = 60 * 30 * 1000;

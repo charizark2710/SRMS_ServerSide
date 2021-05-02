@@ -2,7 +2,6 @@ import * as express from 'express';
 import auth from './Authenticate';
 import { roomPermission } from './Authorized';
 import { roomSchema, Room } from '../model/Room'
-import { db } from '../connector/configFireBase';
 
 export class RoomController {
     public router = express.Router();
@@ -154,8 +153,6 @@ export class RoomController {
                     result.push(key as string);
                 }
             })
-            console.log(result);
-
             return response.status(200).json(result)
         } catch (error) {
             response.status(500).send(error);
@@ -169,8 +166,6 @@ export class RoomController {
                 let key = snap.key;
                 result.push(key as string);
             })
-            console.log(result);
-
             return response.status(200).json(result)
         } catch (error) {
             response.status(500).send(error);
