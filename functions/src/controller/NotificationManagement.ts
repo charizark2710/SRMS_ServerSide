@@ -1,4 +1,4 @@
-import { messaging, db } from '../connector/configFireBase'
+import { db } from '../connector/configFireBase'
 import * as express from 'express';
 import message from '../model/Message'
 
@@ -15,8 +15,16 @@ class notificationManagement {
     }
 
     sendMessage = (onload: message) => {
-        db.ref('notification').child(onload.receiver).child(onload.sendAt.toString()).set(onload);
+        db.ref('notification').child(onload.receiver).child(onload.id.toString()).set(onload);
     }
+    
+    updateIsRead=(id:string)=>{
+        db.ref('notification').child('admin').child(id.toString()).update({
+            isRead: true
+        });
+    }
+    
+    
 }
 
 const notification = new notificationManagement();

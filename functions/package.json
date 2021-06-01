@@ -4,10 +4,10 @@
   "scripts": {
     "lint": "eslint \"src/**/*\"",
     "build": "tsc",
-    "serve": "npm run build && firebase serve --only functions",
+    "serve": "npm run build && firebase serve --only functions:srms",
     "shell": "npm run build && firebase functions:shell",
     "start": "npm run shell",
-    "deploy": "firebase deploy --only functions",
+    "deploy": "firebase deploy --only functions:srms",
     "logs": "firebase functions:log"
   },
   "engines": {
@@ -25,19 +25,12 @@
     "canvas": "^2.6.1",
     "cookie": "^0.4.1",
     "cookie-parser": "^1.4.5",
-    "create-react-app": "^4.0.1",
     "express": "^4.17.1",
-    "express-validator": "^6.8.1",
-    "firebase": "^8.2.1",
     "firebase-admin": "^9.2.0",
     "firebase-functions": "^3.11.0",
     "firebase-functions-test": "^0.2.0",
-    "jsdom": "^16.4.0",
-    "jsonwebtoken": "^8.5.1",
-    "netcode": "^2.0.4",
-    "node-html-parser": "^2.0.2",
-    "node-media-server": "^2.2.4",
-    "socket.io": "^3.0.5"
+    "firebase-tools": "^9.6.1",
+    "jsonwebtoken": "^8.5.1"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.2",

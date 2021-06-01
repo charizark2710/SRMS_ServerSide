@@ -1,5 +1,4 @@
 import * as express from 'express';
-import admin from "firebase-admin";
 import cookie from "cookie"
 
 export class Logout {
@@ -10,11 +9,19 @@ export class Logout {
     }
 
     init() {
-        this.router.post('/logout', (request: express.Request, response: express.Response) => {
-            response.setHeader('Set-Cookie', cookie.serialize('token', '', {
-                expires: new Date()
-            }));
-             response.json("user logout");
+        this.router.post('/logout', async (request: express.Request, response: express.Response) => {
+            try {
+                response.setHeader('Set-Cookie', cookie.serialize('token', '', {
+                    expires: new Date(),
+                    secure: true,
+                    sameSite: 'none',
+                    httpOnly: true
+                }));
+                response.json("user logout");
+            } catch (error) {
+                response.status(500).json(error);
+            }
+            
         });
     }
 }

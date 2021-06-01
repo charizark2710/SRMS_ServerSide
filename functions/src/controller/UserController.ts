@@ -1,10 +1,7 @@
-import { userSchema } from '../model/UserModel'
+import { userSchema, User } from '../model/UserModel'
 import * as express from 'express';
-import { adminAuth } from "../connector/configFireBase"
-import bycrypt from 'bcryptjs'
 import auth from './Authenticate';
 import authorized from './Authorized';
-import notification from './NotificationManagement'
 
 export class UserController {
     public router = express.Router();
@@ -14,98 +11,93 @@ export class UserController {
     }
 
     init() {
-        this.router.patch(this.path + "/edit/:id", auth, authorized({ hasRole: ['admin'] }), this.editUser);
-        this.router.delete(this.path + "/delete/:id", auth, authorized({ hasRole: ['admin'] }), this.deleteUser);
-        this.router.patch(this.path + "/banned/:id/restore", auth, authorized({ hasRole: ['admin', 'student', 'lecture'] }), this.restoreUser);
-        this.router.get(this.path + '/:id', auth, authorized({ hasRole: ['admin', 'student', 'lecture'] }), this.getUser);
+        this.router.patch(this.path + '/banUser', auth, authorized({ hasRole: ['admin'] }), this.banUser);
+        this.router.patch(this.path + '/unbanUser', auth, authorized({ hasRole: ['admin'] }), this.unbanUser);
+        this.router.get(this.path + '/banned', auth, authorized({ hasRole: ['admin'] }), this.getBannedUsers);
+        this.router.get(this.path + '/unbanned', auth, authorized({ hasRole: ['admin'] }), this.getUnbannedUsers);
     }
 
-    editUser = async (request: express.Request, response: express.Response) => {
+    banUser = (request: express.Request, response: express.Response) => {
         try {
-            const data = request.body;
-            const salt = await bycrypt.genSalt(10);
-            const password = await bycrypt.hash(data.password, salt);
-            const user = await adminAuth.updateUser(request.params.id, {
-                password: password
-            });
-            // await userSchema.doc(request.params.id).update({
-            //     password: password,
-            // });
-            return response.send(user);
-        } catch (error) {
-            response.status(500).send(error);
-        }
-    }
+            const data = request.body;//list banning users
+            const result: any[] = []
 
-    deleteUser = async (request: express.Request, response: express.Response) => {
-        try {
-            const uid = request.params.id;
-            const user = await adminAuth.deleteUser(uid);
-            // userSchema.doc(uid).update({
-            //     banned: true,
-            //     bannedAt: new Date()
-            // }).catch(error => {
-            //     response.status(500).send(error);
-            // });
-            userSchema.orderByChild("uid").equalTo(uid).get().then(snapshot => {
-                snapshot.ref.update({
-                    banned: true,
-                    bannedAt: new Date()
-                });
-            });
-            response.send(user);
-        } catch (error) {
-            response.status(500).send(error);
-        }
-    }
+            if (data) {
+                data.forEach(async (user: any) => {
+                    const userObj: User = JSON.parse(user);
+                    const userId = userObj.email.split('@')[0] || ' ';
+                    const bannedAt = (new Date()).toString();
 
-    restoreUser = async (request: express.Request, response: express.Response) => {
-        try {
-            const uid = request.params.id;
-            const user = await userSchema.child(uid).get();
-            const data = await user.val();
-            // const user = await userSchema.doc(uid).get();
-            // const data = user.data();
-            if (user.exists && data?.banned) {
-                // await userSchema.doc(uid).update({
-                //     banned: false,
-                //     bannedAt: null
-                // });
-                user.ref.update({
-                    banned: false,
-                    bannedAt: null
-                });
-                const userRecord = await adminAuth.createUser({
-                    uid: uid,
-                    email: data.email,
-                    displayName: data.name,
-                });
-                await adminAuth.setCustomUserClaims(userRecord.uid, { role: 'client' });
-                return response.send(userRecord);
+                    await userSchema.child(userId).update({
+                        banned: true,
+                        bannedAt: bannedAt
+                    })
+                    await userSchema.child(userId).get().then(function (snapshot) {
+                        const value: User = snapshot.val();
+                        result.push({
+                            email: value.email,
+                            role: value.role,
+                            bannedAt: value.bannedAt,
+                            banned: value.banned,
+                        })
+                        if (result.length === data.length) {
+                            return response.json(result)
+                        }
+                    }).catch(e => {
+                        return response.status(500).json(e)
+                    })
+                })
             }
-            response.send("Nguoi dung khong ton tai");
+            // return response.status(200).json(result)
+        } catch (error) {
+            console.log(error);
+            response.status(500).send(error);
+        }
+    }
+    unbanUser = async (request: express.Request, response: express.Response) => {
+        try {
+            const data = request.query.id as string;
+            let userId = "";
+            if (data) {
+                userId = data.split('@')[0];
+            }
+            await userSchema.child(userId).update({
+                banned: false,
+                bannedAt: null,
+            })
+            return response.status(200).json(data)
         } catch (error) {
             console.log(error);
             response.status(500).send(error);
         }
     }
 
-    getUser = async (request: express.Request, response: express.Response) => {
+    getBannedUsers = async (request: express.Request, response: express.Response) => {
         try {
-            const uid = request.params.id;
-            // const user = await userSchema.doc(uid).get();
-            const user = await userSchema.child(uid).get();
-            notification.sendMessage({
-                message: "You view Yourself",
-                receiver: user.val().email?.split('@')[0],
-                sender: 'admin',
-                sendAt: (new Date()).toString(),
-                isRead: false
-            })
-            response.json(user.val());
+            const result: any[] = [];
+            await userSchema.orderByChild('banned').equalTo(true).on('child_added', snapshot => {
+                const value = snapshot.val();
+                result.push(value);
+            });
+            return response.status(200).json(result)
         } catch (error) {
             console.log(error);
-            response.status(500).json(error);
+            response.status(500).send(error);
         }
     }
+
+    getUnbannedUsers = async (request: express.Request, response: express.Response) => {
+        try {
+            const result: any[] = [];
+            await userSchema.orderByChild('banned').equalTo(false).on('child_added', snapshot => {
+                const value = snapshot.val();
+                result.push(value.email);
+            });
+            return response.status(200).json(result)
+        } catch (error) {
+            console.log(error);
+            response.status(500).send(error);
+        }
+    }
+
 }

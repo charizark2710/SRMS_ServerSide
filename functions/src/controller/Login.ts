@@ -1,10 +1,8 @@
 import * as express from 'express';
-import { userSchema } from "../model/UserModel";
-import { adminAuth } from "../connector/configFireBase"
+import { userSchema, User } from "../model/UserModel";
+import { adminAuth, db } from "../connector/configFireBase"
 import cookie from "cookie"
 import jwt from "jsonwebtoken";
-import { UserController } from './UserController'
-import notification from './NotificationManagement'
 import * as functions from 'firebase-functions';
 
 export class Login {
@@ -25,54 +23,90 @@ export class Login {
             const email = decodedToken.email;
             let result;
             const eType = email?.split('@')[1];
-            if (eType === 'fpt.edu.vn') {
-                const idNum = email?.match('/[a-zA-Z]+|[0-9]+(?:\.[0-9]+)?|\.[0-9]+/g')?.toString();
-                if (idNum?.length! >= 4) {
-                    await adminAuth.setCustomUserClaims(data.uid, { role: 'student' });
-                    result = userSchema.child(data.employeeId).set({
-                        email: email!,
-                        name: data.name!,
-                        banned: false,
-                        uid: data.uid!,
-                        bannedAt: null
-                    });
+            const employeeId = email?.split('@')[0];
+            const uid = data.uid;
+            let role = '';
+            if ((await userSchema.child(employeeId as string).get()).exists()) {
+                if ((await (await userSchema.child(employeeId as string).get()).val() as User).banned) {
+                    return response.status(403).json({ error: 'may bi ban roi' });
                 } else {
-                    await adminAuth.setCustomUserClaims(data.uid, { role: 'lecture' });
+                    userSchema.child(employeeId as string).update({ uid: uid });
+                    role = (await userSchema.child(employeeId as string).get()).val().role;
+                    if (eType === 'fpt.edu.vn') {
+                        const idNum = email?.match('/[a-zA-Z]+|[0-9]+(?:\.[0-9]+)?|\.[0-9]+/g')?.toString();
+                        if (idNum?.length! >= 4)
+                            await adminAuth.setCustomUserClaims(uid, { ...(await adminAuth.getUser(uid)).customClaims, role: role });
+                        else
+                            await adminAuth.setCustomUserClaims(uid, { ...(await adminAuth.getUser(uid)).customClaims, role: role });
+                    }
+                    else {
+                        await adminAuth.setCustomUserClaims(uid, { ...(await adminAuth.getUser(uid)).customClaims, role: role });
+                    }
+                    const token = 'Bearer ' + jwt.sign({ uid: uid, employeeId: data.employeeId, role: role, email: data.email }, functions.config().other.secret_or_publickey as string);
+                    response.setHeader('Set-Cookie', cookie.serialize('token', token, {
+                        httpOnly: true,
+                        maxAge: 60 * 60 * 3,
+                        sameSite: 'none',
+                        secure: true
+                    }));
+                    return response.json({ role: role });
+                }
+            } else {
+                if (eType === 'fpt.edu.vn') {
+                    const idNum = email?.match('/[a-zA-Z]+|[0-9]+(?:\.[0-9]+)?|\.[0-9]+/g')?.toString();
+                    if (idNum?.length! >= 4) {
+                        role = 'student';
+                        await adminAuth.setCustomUserClaims(uid, { role: role });
+                        result = userSchema.child(data.employeeId).set({
+                            email: email!,
+                            name: data.name!,
+                            banned: false,
+                            uid: uid,
+                            bannedAt: null,
+                            role: role
+                        });
+                    } else {
+                        role = 'lecture';
+                        await adminAuth.setCustomUserClaims(uid, { role: role });
+                        result = userSchema.child(data.employeeId).set({
+                            email: email!,
+                            name: data.name!,
+                            uid: uid,
+                            banned: false,
+                            bannedAt: null,
+                            role: role
+                        });
+                    }
+                    const token = 'Bearer ' + jwt.sign({ uid: uid, employeeId: data.employeeId, role: role, email: email }, functions.config().other.secret_or_publickey as string);
+                    response.setHeader('Set-Cookie', cookie.serialize('token', token, {
+                        httpOnly: true,
+                        maxAge: 60 * 60 * 3,
+                        sameSite: 'none',
+                        secure: true
+                    }));
+                } else if (eType === 'fe.edu.vn' || email === 'dangduchieudn99@gmail.com' || email === 'pbt.anh1999@gmail.com' || email === 'winnguyenthongminhghe@gmail.com' || email === 'thanhngo100298@gmail.com') {
+                    role = 'admin';
+                    await adminAuth.setCustomUserClaims(uid, { ...(await adminAuth.getUser(uid)).customClaims, role: role });
                     result = userSchema.child(data.employeeId).set({
                         email: email!,
                         name: data.name!,
-                        uid: data.uid!,
+                        uid: uid,
                         banned: false,
-                        bannedAt: null
+                        bannedAt: null,
+                        role: role
                     });
+                    const token = 'Bearer ' + jwt.sign({ uid: uid, employeeId: data.employeeId, role: role, email: data.email }, functions.config().other.secret_or_publickey as string);
+                    response.setHeader('Set-Cookie', cookie.serialize('token', token, {
+                        httpOnly: true,
+                        maxAge: 60 * 60 * 3,
+                        sameSite: 'none',
+                        secure: true
+                    }));
+                } else {
+                    return response.status(400).json({ error: "Sai Email" });
                 }
-                const role = (await adminAuth.getUser(data.uid)).customClaims?.role;
-                const token = 'Bearer ' + jwt.sign({ uid: data.uid, employeeId: data.employeeId, role: role, email: email }, functions.config().other.secretOrPublicKey as string);
-                response.setHeader('Set-Cookie', cookie.serialize('token', token, {
-                    httpOnly: true,
-                    maxAge: 60 * 60,
-                }));
-                return response.json('ok');
-            } else if(eType === 'fe.edu.vn'){
-                await adminAuth.setCustomUserClaims(data.uid, { role: 'admin' });
-                result = userSchema.child(data.employeeId).set({
-                    email: email!,
-                    name: data.name!,
-                    uid: data.uid!,
-                    banned: false,
-                    bannedAt: null
-                });
-                const role = (await adminAuth.getUser(data.uid)).customClaims?.role;
-                const token = 'Bearer ' + jwt.sign({ uid: data.uid, employeeId: data.employeeId, role: role, email: data.email }, functions.config().other.secretOrPublicKey as string);
-                response.setHeader('Set-Cookie', cookie.serialize('token', token, {
-                    httpOnly: true,
-                    maxAge: 60 * 60,
-                }));
-                return response.json('ok');
-            } else {
-                return response.status(400).json({error: "Sai Email"});
+                return response.json({ role: role });
             }
-
         } catch (e) {
             console.log(e);
             response.status(500).json({ error: e });
